@@ -15,21 +15,49 @@
     }
 
     .content {
-      max-width: 600px;
+      max-width: 700px;
+      margin: 0 auto;
     }
 
     h1 {
       font-size: 2.5rem;
-      margin-bottom: 0.5rem;
+      margin-bottom: 1rem;
     }
 
-    p.tagline {
-      font-style: italic;
-      color: #555;
+    nav {
+      display: flex;
+      gap: 2rem;
       margin-bottom: 2rem;
+      border-bottom: 1px solid #ccc;
     }
 
-    .links a {
+    nav a {
+      text-decoration: none;
+      color: #222;
+      font-weight: bold;
+      padding-bottom: 0.25rem;
+      position: relative;
+    }
+
+    nav a:hover::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 2px;
+      background-color: black;
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    .tab-content a {
       display: block;
       margin: 0.5rem 0;
       text-decoration: none;
@@ -38,7 +66,7 @@
       transition: color 0.3s;
     }
 
-    .links a:hover {
+    .tab-content a:hover {
       color: #001e2b;
     }
 
@@ -52,16 +80,42 @@
 <body>
   <div class="content">
     <h1>Matt Beyerle</h1>
-    <p class="tagline">Accountant, runner, reader, cyclist, citizen</p>
 
-    <div class="links">
+    <nav>
+      <a href="#" onclick="showTab('career')">Career</a>
+      <a href="#" onclick="showTab('health')">Health</a>
+      <a href="#" onclick="showTab('thinking')">Thinking</a>
+      <a href="#" onclick="showTab('citizenship')">Citizenship</a>
+    </nav>
+
+    <div id="career" class="tab-content active">
       <a href="https://www.linkedin.com/in/matthewbeyerle/" target="_blank">LinkedIn</a>
+    </div>
+
+    <div id="health" class="tab-content">
+      <a href="https://www.strava.com/athletes/16912919" target="_blank">Strava | Outdoor activities</a>
+    </div>
+
+    <div id="thinking" class="tab-content">
       <a href="https://matthewbeyerle.medium.com/" target="_blank">Medium | Some musings of mine</a>
       <a href="https://www.goodreads.com/user/show/61905171-matt" target="_blank">Goodreads | Books I've reviewed</a>
-      <a href="https://www.strava.com/athletes/16912919" target="_blank">Strava | Outdoor activities</a>
+    </div>
+
+    <div id="citizenship" class="tab-content">
+      <!-- Content to be added later -->
     </div>
 
     <div class="footer">© 2025 Matt Beyerle</div>
   </div>
+
+  <script>
+    function showTab(id) {
+      const tabs = document.querySelectorAll('.tab-content');
+      tabs.forEach(tab => {
+        tab.classList.remove('active');
+      });
+      document.getElementById(id).classList.add('active');
+    }
+  </script>
 </body>
 </html>
