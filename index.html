@@ -99,45 +99,119 @@
       <a href="#" onclick="showTab('citizenship')">Citizenship</a>
     </nav>
 
-<div id="career" class="tab-content active" style="font-family: 'Courier New', monospace; color: #00ff00; background-color: #000; padding: 1rem; border: 1px solid #00ff00;">
-  <div style="display: grid; grid-template-columns: 250px 1fr; border-collapse: collapse; gap: 0;">
-    <div style="border: 1px solid #00ff00; padding: 0.5rem; font-weight: bold;">Role</div>
-    <div style="border: 1px solid #00ff00; padding: 0.5rem; font-weight: bold;">Details</div>
+<div id="career" class="tab-content active" style="margin: 0 -2rem;">
+  <style>
+    .terminal-grid {
+      display: grid;
+      grid-template-columns: 250px 1fr;
+      width: 100vw;
+      font-family: 'Courier New', monospace;
+      background-color: #000;
+      color: #00ff00;
+      border-collapse: collapse;
+    }
 
-    <div style="border: 1px solid #00ff00; padding: 0.5rem;">Senior Associate, FDD</div>
-    <div style="border: 1px solid #00ff00; padding: 0.5rem;">
-      Oct 2022 – Present<br>
-      • Led diligence on 35+ M&A targets for corporate and PE clients<br>
-      • Identified EBITDA, working capital, and debt-like adjustments using:<br>
-      &nbsp;&nbsp;- Trend analysis of monthly P&L, pricing/mix, cost structures<br>
-      &nbsp;&nbsp;- GL-level opex review (e.g., personnel, occupancy)<br>
-      &nbsp;&nbsp;- Working capital and balance sheet walkthroughs<br>
-      • Managed 4–6 team members, coordinating global teams<br>
+    .terminal-grid div,
+    .terminal-grid input {
+      border: 1px solid #00ff00;
+      padding: 0.5rem;
+      white-space: pre-wrap;
+      overflow-wrap: break-word;
+    }
+
+    .terminal-grid input {
+      background: transparent;
+      color: #00ff00;
+      border: none;
+      outline: none;
+      width: 100%;
+    }
+
+    .terminal-cursor::after {
+      content: "";
+      display: inline-block;
+      width: 8px;
+      height: 1.2em;
+      background-color: #00ff00;
+      animation: blink 1s step-start 0s infinite;
+      vertical-align: bottom;
+      margin-left: 4px;
+    }
+
+    @keyframes blink {
+      50% { opacity: 0; }
+    }
+
+    .terminal-blank {
+      border: 1px solid #00ff00;
+      padding: 0.5rem;
+      height: 2rem;
+    }
+  </style>
+
+  <div class="terminal-grid">
+    <!-- Top Blank Rows -->
+    <div class="terminal-blank"></div>
+    <div class="terminal-blank"></div>
+    <div class="terminal-blank"></div>
+    <div class="terminal-blank"></div>
+
+    <!-- Blinking cursor input -->
+    <div>
+      <span class="terminal-cursor"></span>
+    </div>
+    <div>
+      <input type="text" placeholder="Type here..." />
+    </div>
+
+    <!-- Header Row -->
+    <div><strong>Role</strong></div>
+    <div><strong>Details</strong></div>
+
+    <!-- Job #1 -->
+    <div>Senior Associate, FDD</div>
+    <div>
+      Oct 2022 – Present
+      • Led diligence on 35+ M&A targets for corporate and PE clients
+      • Identified EBITDA, working capital, and debt-like adjustments using:
+        - Trend analysis of monthly P&L, pricing/mix, cost structures
+        - GL-level opex review (e.g., personnel, occupancy)
+        - Working capital and balance sheet walkthroughs
+      • Managed 4–6 team members, coordinating global teams
       • Presented findings in client-facing QoE reports
     </div>
 
-    <div style="border: 1px solid #00ff00; padding: 0.5rem;">Associate, FDD</div>
-    <div style="border: 1px solid #00ff00; padding: 0.5rem;">
-      Jul 2021 – Sep 2022<br>
-      • Transformed raw trial balance data into financial statements<br>
-      • Flagged trends and anomalies for QoE reports<br>
+    <!-- Job #2 -->
+    <div>Associate, FDD</div>
+    <div>
+      Jul 2021 – Sep 2022
+      • Transformed raw trial balance data into financial statements
+      • Flagged trends and anomalies for QoE reports
       • Developed info request lists and meeting agendas
     </div>
 
-    <div style="border: 1px solid #00ff00; padding: 0.5rem;">Associate, Corporate Strategy</div>
-    <div style="border: 1px solid #00ff00; padding: 0.5rem;">
-      Jan 2021 – Jul 2021<br>
-      • Assessed modeling assumptions for strategic investments<br>
-      • Validated revenue/cost synergies and commercial viability<br>
+    <!-- Job #3 -->
+    <div>Associate, Corporate Strategy</div>
+    <div>
+      Jan 2021 – Jul 2021
+      • Assessed modeling assumptions for strategic investments
+      • Validated revenue/cost synergies and commercial viability
       • Partnered with FDD to align findings and timelines
     </div>
 
-    <div style="border: 1px solid #00ff00; padding: 0.5rem;">Intern, Deal Advisory</div>
-    <div style="border: 1px solid #00ff00; padding: 0.5rem;">
-      Jan 2019 – Mar 2019<br>
-      • Drafted post-merger MD&A for global confectioner<br>
+    <!-- Job #4 -->
+    <div>Intern, Deal Advisory</div>
+    <div>
+      Jan 2019 – Mar 2019
+      • Drafted post-merger MD&A for global confectioner
       • Supported diligence for logistics acquisition
     </div>
+
+    <!-- Bottom Blank Rows -->
+    <div class="terminal-blank"></div>
+    <div class="terminal-blank"></div>
+    <div class="terminal-blank"></div>
+    <div class="terminal-blank"></div>
   </div>
 </div>
 
