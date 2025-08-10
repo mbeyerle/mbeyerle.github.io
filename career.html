@@ -3,385 +3,339 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Matt Beyerle | Career (Terminal Grid)</title>
+<title>Matt Beyerle | Career (Terminal Sheet)</title>
 <link rel="icon" href="favicon.ico" type="image/x-icon">
 <style>
   :root{
-    --bg:#000;
-    --green:#00ff00;
-    --muted:#0f0f0f;
-    --row-h:56px; /* row height (change if you want taller rows) */
-    --role-slots:6;   /* number of word "cells" reserved for Role column */
-    --detail-slots:30; /* number of word "cells" reserved for Details column per row chunk */
-    --gap:6px;
+    --bg: #000;
+    --crt: #00ff00;
+    --accent: rgba(0,255,0,0.08);
+    --row-h-desktop: 72px;   /* fixed row height desktop */
+    --row-h-mobile: 64px;    /* fixed row height mobile */
+    --role-span-desktop: 6;  /* number of columns role will take (out of 24) on desktop */
+    --role-span-mobile: 5;   /* role span on mobile */
+    --cols: 24;              /* conceptual spreadsheet columns */
+    --gap: 8px;
   }
 
-  /* Page */
-  html,body{height:100%;}
+  /* Reset / base */
+  html,body { height: 100%; }
   body{
     margin:0;
     background:var(--bg);
-    color:var(--green);
+    color:var(--crt);
     font-family: "Courier New", monospace;
     -webkit-font-smoothing:antialiased;
     -moz-osx-font-smoothing:grayscale;
-    padding:0;
+    overflow: hidden; /* terminal is full-viewport */
   }
 
-  /* Outer container keeps header/nav & grid visible */
-  .page {
-    min-height:100vh;
-    display:flex;
-    flex-direction:column;
-  }
-
-  .content {
-    max-width:1200px;
-    margin:0 auto;
-    width:100%;
-    padding:20px;
+  /* Terminal container fills the entire viewport */
+  .terminal-wrap{
+    position:fixed;
+    inset:0;
+    padding:18px;
     box-sizing:border-box;
-    flex:1 1 auto;
     display:flex;
     flex-direction:column;
+    gap:12px;
+    background:var(--bg);
   }
 
-  header{
+  /* Header sitting inside the terminal area, styled like sheet */
+  .header {
     display:flex;
     align-items:center;
     justify-content:space-between;
-    gap:1rem;
-    margin-bottom:10px;
+    gap:12px;
   }
 
-  h1{
-    margin:0;
-    font-size:1.6rem;
-    color:var(--green);
-    letter-spacing:0.5px;
+  .site-title {
+    color:var(--crt);
+    text-decoration:none;
+    font-size:1.4rem;
+    font-weight:700;
   }
 
-  nav{
+  .nav {
     display:flex;
     gap:14px;
-    align-items:center;
   }
 
-  nav a{
-    color:var(--green);
+  .nav a{
+    color:var(--crt);
     text-decoration:none;
     font-weight:bold;
+    padding-bottom:3px;
     border-bottom:2px solid transparent;
-    padding-bottom:2px;
-    font-size:0.95rem;
   }
 
-  nav a:hover{border-bottom-color:var(--green);}
+  .nav a.active, .nav a[aria-current="page"]{
+    border-bottom-color:var(--crt);
+  }
 
-  /* Terminal / spreadsheet area */
-  .terminal-wrap{
-    background:var(--bg);
-    color:var(--green);
-    border: 2px solid rgba(0,255,0,0.06);
-    padding:8px;
-    box-sizing:border-box;
+  /* The main sheet area - will scroll if many rows */
+  .sheet {
     flex:1 1 auto;
-    display:flex;
-    flex-direction:column;
-    overflow:hidden;
-  }
-
-  .terminal-grid{
-    /* This is the table of rows */
-    width:100%;
-    display:flex;
-    flex-direction:column;
-    gap:var(--gap);
+    background: transparent;
+    border: 2px solid var(--accent);
     padding:6px;
     box-sizing:border-box;
-    overflow:auto; /* scroll when content tall */
-    height: calc(100vh - 180px); /* roughly full screen minus header/footer — keeps it fullscreen feeling */
+    overflow:auto;
   }
 
-  /* Each row is a two-column grid: Role | Details */
-  .grid-row{
+  /* Each row is a grid with many columns; two major "merged" cells per row: role and details */
+  .row {
     display:grid;
-    grid-template-columns: 300px 1fr; /* role col fixed, details flexible */
-    align-items:stretch;
-    gap:var(--gap);
-    height:var(--row-h);
-    min-height:var(--row-h);
+    grid-template-columns: repeat(var(--cols), 1fr);
+    gap: var(--gap);
+    align-items: center;
     box-sizing:border-box;
+    height: var(--row-h-desktop);
+    min-height: var(--row-h-desktop);
+    margin-bottom: var(--gap);
   }
 
-  /* The column that contains many small word-cells */
-  .cell-group{
-    display:grid;
-    grid-auto-flow:column;
-    grid-auto-columns: minmax(0, 1fr); /* each word-cell gets equal width in the group row */
-    gap:var(--gap);
-    align-items:center;
-    padding:4px;
+  /* The visual spreadsheet cell styles shared by role/details */
+  .cell {
+    border: 1px solid var(--crt);
+    padding: 10px;
     box-sizing:border-box;
-    overflow:hidden;
+    color: var(--crt);
+    background: transparent;
+    overflow: hidden;
+    white-space: pre-wrap;
+    word-break: break-word;
+    font-size: 0.98rem;
   }
 
-  /* Word cell style (looks like spreadsheet cell) */
-  .word-cell, .word-input {
-    border:1px solid var(--green);
-    height:calc(var(--row-h) - 10px);
+  .role-cell { 
+    grid-column: 1 / span var(--role-span-desktop);
+    font-weight: 700;
     display:flex;
     align-items:center;
-    justify-content:flex-start;
-    padding:6px 8px;
-    box-sizing:border-box;
-    font-size:0.95rem;
-    white-space:nowrap;
-    overflow:hidden;
-    text-overflow:ellipsis;
-    background:transparent;
-    color:var(--green);
   }
 
-  .word-cell{
-    cursor:default;
+  .details-cell {
+    grid-column: calc(var(--role-span-desktop) + 1) / -1;
+    display:block;
+    align-items:center;
   }
 
-  /* Empty slots are inputs */
-  .word-input{
-    background:transparent;
-    color:var(--green);
-    border:1px dashed rgba(0,255,0,0.35);
-    outline:none;
+  /* Inputs for empty cells */
+  .cell input {
     width:100%;
+    height:100%;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--crt);
+    font-family: inherit;
+    font-size: inherit;
   }
 
-  .word-input::placeholder{ color: rgba(0,255,0,0.25); }
-
-  /* Header row styling */
-  .header-row .word-cell{
-    font-weight:bold;
-    justify-content:center;
-    letter-spacing:0.6px;
+  .cell .muted {
+    color: rgba(0,255,0,0.45);
+    font-size:0.9rem;
   }
 
-  /* Make the Role column visually narrower on small screens */
-  @media (max-width:900px){
-    .grid-row{ grid-template-columns: 180px 1fr; }
-    :root{ --row-h:52px; --detail-slots:20; }
-  }
-
-  /* Stack on very small screens: role above details */
-  @media (max-width:520px){
-    .grid-row{
-      grid-template-columns:1fr;
-      grid-auto-rows: var(--row-h);
+  /* Make sure rows appear separate on small screens but keep fixed height */
+  @media (max-width: 900px) {
+    :root { --role-span-desktop: var(--role-span-mobile); }
+    .row { 
+      height: var(--row-h-mobile);
+      min-height: var(--row-h-mobile);
     }
-    .cell-group{ grid-auto-flow:row; grid-auto-rows: 1fr; overflow:auto; }
-    :root{ --row-h:60px; --role-slots:8; --detail-slots:12; }
-    .terminal-grid{ height: calc(100vh - 200px); }
   }
 
-  footer{ color: rgba(0,255,0,0.45); font-size:0.85rem; margin-top:12px; text-align:center; padding-bottom:12px; }
+  /* Stack role above details on very narrow screens but keep equal row height by using a two-row grid per "visual row" */
+  @media (max-width: 520px) {
+    .row {
+      grid-template-columns: repeat(8, 1fr); /* fewer columns conceptually */
+      grid-auto-rows: 1fr;
+      align-items: stretch;
+      height: calc(var(--row-h-mobile) * 1.2); /* slightly taller on very small devices */
+      min-height: calc(var(--row-h-mobile) * 1.2);
+    }
+    .role-cell {
+      grid-column: 1 / -1;
+      align-items:flex-start;
+    }
+    .details-cell {
+      grid-column: 1 / -1;
+    }
+    .cell { padding:8px; font-size:0.95rem; }
+  }
+
+  /* Footer inside terminal */
+  .terminal-footer {
+    color: rgba(0,255,0,0.45);
+    text-align:center;
+    font-size:0.9rem;
+  }
+
+  /* Make the visuals more CRT-like */
+  .cell { box-shadow: inset 0 -1px 0 rgba(0,0,0,0.6); }
+  ::selection { background: rgba(0,255,0,0.15); color: var(--crt); }
 </style>
 </head>
 <body>
-  <div class="page">
-    <div class="content">
-      <header>
-        <h1>Matt Beyerle</h1>
-        <nav>
-          <a href="index.html">Home</a>
-          <a href="career.html" aria-current="page">Career</a>
-          <a href="health.html">Health</a>
-          <a href="thinking.html">Thinking</a>
-          <a href="citizenship.html">Citizenship</a>
-        </nav>
-      </header>
-
-      <div class="terminal-wrap" role="application" aria-label="Career terminal spreadsheet">
-        <div class="terminal-grid" id="terminalGrid">
-          <!-- Rows will be injected by JS -->
-        </div>
-      </div>
-
-      <footer>© 2025 Matt Beyerle</footer>
+  <div class="terminal-wrap" role="application" aria-label="Terminal spreadsheet view">
+    <div class="header">
+      <a class="site-title" href="index.html">Matt Beyerle</a>
+      <nav class="nav" role="navigation" aria-label="Main">
+        <a class="active" href="career.html" aria-current="page">Career</a>
+        <a href="health.html">Health</a>
+        <a href="thinking.html">Thinking</a>
+        <a href="citizenship.html">Citizenship</a>
+      </nav>
     </div>
+
+    <div class="sheet" id="sheet" tabindex="0" aria-label="Spreadsheet rows">
+      <!-- JavaScript will inject rows here -->
+    </div>
+
+    <div class="terminal-footer">© 2025 Matt Beyerle</div>
   </div>
 
 <script>
-/*
-  Strategy:
-  - We create a sequence of rows.
-  - Each logical "row" contains two groups: role (fixed number of slots) and details (chunked).
-  - Role text placed on the first row for that job; subsequent rows for the same job have empty role slots (inputs).
-  - Every "slot" is a bordered box. If there's no word to put into a slot, we place an input element.
-*/
-
-/* Your resume content (unchanged wording) */
+/* Resume content (verbatim) */
 const jobs = [
   {
     role: "Senior Associate, FDD",
-    details: `Oct 2022 – Present • Led diligence on 35+ M&A targets for corporate and PE clients • Identified EBITDA, working capital, and debt-like adjustments using: - Trend analysis of monthly P&L, pricing/mix, cost structures - GL-level opex review (e.g., personnel, occupancy) - Working capital and balance sheet walkthroughs • Managed 4–6 team members, coordinating global teams • Presented findings in client-facing QoE reports`
+    details: `Oct 2022 – Present
+• Led diligence on 35+ M&A targets for corporate and PE clients
+• Identified EBITDA, working capital, and debt-like adjustments using:
+  - Trend analysis of monthly P&L, pricing/mix, cost structures
+  - GL-level opex review (e.g., personnel, occupancy)
+  - Working capital and balance sheet walkthroughs
+• Managed 4–6 team members, coordinating global teams
+• Presented findings in client-facing QoE reports`
   },
   {
     role: "Associate, FDD",
-    details: `Jul 2021 – Sep 2022 • Transformed raw trial balance data into financial statements • Flagged trends and anomalies for QoE reports • Developed info request lists and meeting agendas`
+    details: `Jul 2021 – Sep 2022
+• Transformed raw trial balance data into financial statements
+• Flagged trends and anomalies for QoE reports
+• Developed info request lists and meeting agendas`
   },
   {
     role: "Associate, Corporate Strategy",
-    details: `Jan 2021 – Jul 2021 • Assessed modeling assumptions for strategic investments • Validated revenue/cost synergies and commercial viability • Partnered with FDD to align findings and timelines`
+    details: `Jan 2021 – Jul 2021
+• Assessed modeling assumptions for strategic investments
+• Validated revenue/cost synergies and commercial viability
+• Partnered with FDD to align findings and timelines`
   },
   {
     role: "Intern, Deal Advisory",
-    details: `Jan 2019 – Mar 2019 • Drafted post-merger MD&A for global confectioner • Supported diligence for logistics acquisition`
+    details: `Jan 2019 – Mar 2019
+• Drafted post-merger MD&A for global confectioner
+• Supported diligence for logistics acquisition`
   }
 ];
 
-/* Controls for slot counts */
-const ROLE_SLOTS = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--role-slots')) || 6;
-const DETAIL_SLOTS = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--detail-slots')) || 30;
-
-/* Utility: split text into words (preserve punctuation like bullets as tokens) */
-function splitWords(text){
-  // split on spaces but keep punctuation attached; we want bullets like '•' and hyphen items preserved
-  return text.split(/\s+/).filter(Boolean);
-}
-
-/* Chunk an array into pieces */
-function chunk(arr, size){
-  const out = [];
-  for(let i=0;i<arr.length;i+=size) out.push(arr.slice(i,i+size));
-  return out;
-}
-
-/* Create a row DOM element */
-function makeRow(isHeader=false){
+/* Helpers */
+function createRowElement(roleContent, detailsContent, isHeader=false){
   const row = document.createElement('div');
-  row.className = 'grid-row' + (isHeader ? ' header-row' : '');
-  // left: role container
-  const left = document.createElement('div');
-  left.className = 'cell-group role-group';
-  // right: details container
-  const right = document.createElement('div');
-  right.className = 'cell-group details-group';
-  row.appendChild(left);
-  row.appendChild(right);
-  return {row,left,right};
-}
-
-/* Fill a cell group with words (up to 'slots'). Return number of slots used. */
-function fillGroupWithWords(container, words, slots){
-  let used = 0;
-  for(let i=0;i<slots;i++){
-    if(words && words[i]){
-      const wc = document.createElement('div');
-      wc.className = 'word-cell';
-      wc.textContent = words[i];
-      container.appendChild(wc);
-      used++;
-    } else {
-      // empty -> input
-      const inp = document.createElement('input');
-      inp.className = 'word-input';
-      inp.setAttribute('placeholder','');
-      inp.setAttribute('aria-label','empty cell input');
-      container.appendChild(inp);
-    }
+  row.className = 'row';
+  // role cell
+  const roleCell = document.createElement('div');
+  roleCell.className = 'cell role-cell';
+  if(roleContent === null){
+    const input = document.createElement('input');
+    input.placeholder = '';
+    input.setAttribute('aria-label','empty role cell');
+    roleCell.appendChild(input);
+  } else {
+    roleCell.textContent = roleContent;
   }
-  return used;
+  // details cell
+  const detailsCell = document.createElement('div');
+  detailsCell.className = 'cell details-cell';
+  if(detailsContent === null){
+    const input = document.createElement('input');
+    input.placeholder = '';
+    input.setAttribute('aria-label','empty details cell');
+    detailsCell.appendChild(input);
+  } else {
+    // preserve line breaks as shown in terminal style
+    // but keep everything inside a single 'merged' cell
+    const pre = document.createElement('div');
+    pre.style.whiteSpace = 'pre-wrap';
+    pre.textContent = detailsContent;
+    detailsCell.appendChild(pre);
+  }
+
+  row.appendChild(roleCell);
+  row.appendChild(detailsCell);
+  return row;
 }
 
-/* Fill a group with an array of words (already chunked to fit slots) */
-function fillExactGroup(container, chunkedWords, slots){
-  for(let i=0;i<slots;i++){
-    const token = chunkedWords[i];
-    if(token !== undefined){
-      const wc = document.createElement('div');
-      wc.className = 'word-cell';
-      wc.textContent = token;
-      container.appendChild(wc);
+/* Splits long details into logical chunks to create additional rows while ensuring each row is same fixed height.
+   We split on bullets and newline markers so each bullet/sentence becomes its own row.
+*/
+function splitDetails(detailsText){
+  // Normalize newlines and split by bullet markers or line breaks
+  const normalized = detailsText.replace(/\r\n/g,'\n').trim();
+  // split on newline + bullets or lines that start with '-' or '•'
+  const parts = normalized.split(/\n(?=\S)|\n/).map(s => s.trim()).filter(Boolean);
+
+  // Further split lines that contain '•' into separate parts
+  const expanded = [];
+  parts.forEach(p => {
+    if(p.includes('•')){
+      // split by '•' keeping markers
+      const pieces = p.split('•').map(x => x.trim()).filter(Boolean);
+      pieces.forEach(pc => expanded.push('• ' + pc));
     } else {
-      const inp = document.createElement('input');
-      inp.className = 'word-input';
-      inp.setAttribute('placeholder','');
-      inp.setAttribute('aria-label','empty cell input');
-      container.appendChild(inp);
+      expanded.push(p);
     }
+  });
+  return expanded;
+}
+
+/* Build out the entire sheet (including top/bottom blank rows like original) */
+const sheet = document.getElementById('sheet');
+
+/* Function to append a number of blank rows */
+function appendBlankRows(count){
+  for(let i=0;i<count;i++){
+    const row = createRowElement(null, null);
+    sheet.appendChild(row);
   }
 }
 
-/* Build grid */
-const grid = document.getElementById('terminalGrid');
+/* Top blank rows (4) */
+appendBlankRows(4);
 
-// top blank rows (4 rows like original)
-for(let i=0;i<4;i++){
-  const {row,left,right} = makeRow();
-  // fill with inputs (blank)
-  fillExactGroup(left, [], ROLE_SLOTS);
-  fillExactGroup(right, [], DETAIL_SLOTS);
-  grid.appendChild(row);
-}
+/* Header row */
+const headerRow = createRowElement("Role", "Details");
+sheet.appendChild(headerRow);
 
-// header row
-{
-  const {row,left,right} = makeRow(true);
-  // put "Role" across left first slot(s)
-  const roleWords = ["Role"];
-  fillExactGroup(left, roleWords.concat([]), ROLE_SLOTS);
-  const detailWords = ["Details"];
-  fillExactGroup(right, detailWords.concat([]), DETAIL_SLOTS);
-  grid.appendChild(row);
-}
-
-// For each job, chunk details into DETAIL_SLOTS-per-row pieces
+/* For each job, split details into chunks and add rows. First row has role text; subsequent rows have empty role cell (input) */
 jobs.forEach(job => {
-  const roleWords = splitWords(job.role);
-  const detailWords = splitWords(job.details);
-
-  const detailChunks = chunk(detailWords, DETAIL_SLOTS);
-
-  detailChunks.forEach((chunkWords, index) => {
-    const {row,left,right} = makeRow();
-    if(index===0){
-      // first row: place role words in left, padded to ROLE_SLOTS
-      // If role has more words than ROLE_SLOTS, truncate last words into final slot as joined string
-      const leftTokens = [];
-      if(roleWords.length <= ROLE_SLOTS){
-        leftTokens.push(...roleWords);
-      } else {
-        // more words than slots: put all but last few concatenated in final slot
-        leftTokens.push(...roleWords.slice(0, ROLE_SLOTS-1));
-        leftTokens.push(roleWords.slice(ROLE_SLOTS-1).join(' '));
-      }
-      fillExactGroup(left, leftTokens, ROLE_SLOTS);
+  const detailParts = splitDetails(job.details);
+  detailParts.forEach((part, idx) => {
+    if(idx === 0){
+      sheet.appendChild(createRowElement(job.role, part));
     } else {
-      // subsequent rows: empty role slots (inputs)
-      fillExactGroup(left, [], ROLE_SLOTS);
+      sheet.appendChild(createRowElement(null, part));
     }
-
-    // Fill details with chunkWords (up to DETAIL_SLOTS)
-    fillExactGroup(right, chunkWords, DETAIL_SLOTS);
-
-    grid.appendChild(row);
   });
 });
 
-// bottom blank rows (4 rows)
-for(let i=0;i<4;i++){
-  const {row,left,right} = makeRow();
-  fillExactGroup(left, [], ROLE_SLOTS);
-  fillExactGroup(right, [], DETAIL_SLOTS);
-  grid.appendChild(row);
-}
+/* Bottom blank rows (4) */
+appendBlankRows(4);
 
-/* Optional: allow pressing Enter in inputs to focus next input */
-document.addEventListener('keydown', (e)=>{
-  if(e.key === 'Enter' && document.activeElement && document.activeElement.classList.contains('word-input')){
+/* Accessibility: allow Enter to move between inputs; keep focus visible */
+document.addEventListener('keydown', (e) => {
+  if(e.key === 'Enter' && document.activeElement && document.activeElement.tagName === 'INPUT'){
     e.preventDefault();
-    const inputs = Array.from(document.querySelectorAll('.word-input'));
+    const inputs = Array.from(sheet.querySelectorAll('input'));
     const idx = inputs.indexOf(document.activeElement);
-    if(idx >= 0 && idx < inputs.length - 1) inputs[idx+1].focus();
+    if(idx >= 0 && idx < inputs.length - 1){
+      inputs[idx+1].focus();
+    }
   }
 });
 </script>
