@@ -1,90 +1,389 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Matt Beyerle | Career</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <link rel="icon" href="favicon.ico" type="image/x-icon" />
-  <link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css" />
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Matt Beyerle | Career (Terminal Grid)</title>
+<link rel="icon" href="favicon.ico" type="image/x-icon">
+<style>
+  :root{
+    --bg:#000;
+    --green:#00ff00;
+    --muted:#0f0f0f;
+    --row-h:56px; /* row height (change if you want taller rows) */
+    --role-slots:6;   /* number of word "cells" reserved for Role column */
+    --detail-slots:30; /* number of word "cells" reserved for Details column per row chunk */
+    --gap:6px;
+  }
+
+  /* Page */
+  html,body{height:100%;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--green);
+    font-family: "Courier New", monospace;
+    -webkit-font-smoothing:antialiased;
+    -moz-osx-font-smoothing:grayscale;
+    padding:0;
+  }
+
+  /* Outer container keeps header/nav & grid visible */
+  .page {
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+  }
+
+  .content {
+    max-width:1200px;
+    margin:0 auto;
+    width:100%;
+    padding:20px;
+    box-sizing:border-box;
+    flex:1 1 auto;
+    display:flex;
+    flex-direction:column;
+  }
+
+  header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:1rem;
+    margin-bottom:10px;
+  }
+
+  h1{
+    margin:0;
+    font-size:1.6rem;
+    color:var(--green);
+    letter-spacing:0.5px;
+  }
+
+  nav{
+    display:flex;
+    gap:14px;
+    align-items:center;
+  }
+
+  nav a{
+    color:var(--green);
+    text-decoration:none;
+    font-weight:bold;
+    border-bottom:2px solid transparent;
+    padding-bottom:2px;
+    font-size:0.95rem;
+  }
+
+  nav a:hover{border-bottom-color:var(--green);}
+
+  /* Terminal / spreadsheet area */
+  .terminal-wrap{
+    background:var(--bg);
+    color:var(--green);
+    border: 2px solid rgba(0,255,0,0.06);
+    padding:8px;
+    box-sizing:border-box;
+    flex:1 1 auto;
+    display:flex;
+    flex-direction:column;
+    overflow:hidden;
+  }
+
+  .terminal-grid{
+    /* This is the table of rows */
+    width:100%;
+    display:flex;
+    flex-direction:column;
+    gap:var(--gap);
+    padding:6px;
+    box-sizing:border-box;
+    overflow:auto; /* scroll when content tall */
+    height: calc(100vh - 180px); /* roughly full screen minus header/footer — keeps it fullscreen feeling */
+  }
+
+  /* Each row is a two-column grid: Role | Details */
+  .grid-row{
+    display:grid;
+    grid-template-columns: 300px 1fr; /* role col fixed, details flexible */
+    align-items:stretch;
+    gap:var(--gap);
+    height:var(--row-h);
+    min-height:var(--row-h);
+    box-sizing:border-box;
+  }
+
+  /* The column that contains many small word-cells */
+  .cell-group{
+    display:grid;
+    grid-auto-flow:column;
+    grid-auto-columns: minmax(0, 1fr); /* each word-cell gets equal width in the group row */
+    gap:var(--gap);
+    align-items:center;
+    padding:4px;
+    box-sizing:border-box;
+    overflow:hidden;
+  }
+
+  /* Word cell style (looks like spreadsheet cell) */
+  .word-cell, .word-input {
+    border:1px solid var(--green);
+    height:calc(var(--row-h) - 10px);
+    display:flex;
+    align-items:center;
+    justify-content:flex-start;
+    padding:6px 8px;
+    box-sizing:border-box;
+    font-size:0.95rem;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    background:transparent;
+    color:var(--green);
+  }
+
+  .word-cell{
+    cursor:default;
+  }
+
+  /* Empty slots are inputs */
+  .word-input{
+    background:transparent;
+    color:var(--green);
+    border:1px dashed rgba(0,255,0,0.35);
+    outline:none;
+    width:100%;
+  }
+
+  .word-input::placeholder{ color: rgba(0,255,0,0.25); }
+
+  /* Header row styling */
+  .header-row .word-cell{
+    font-weight:bold;
+    justify-content:center;
+    letter-spacing:0.6px;
+  }
+
+  /* Make the Role column visually narrower on small screens */
+  @media (max-width:900px){
+    .grid-row{ grid-template-columns: 180px 1fr; }
+    :root{ --row-h:52px; --detail-slots:20; }
+  }
+
+  /* Stack on very small screens: role above details */
+  @media (max-width:520px){
+    .grid-row{
+      grid-template-columns:1fr;
+      grid-auto-rows: var(--row-h);
+    }
+    .cell-group{ grid-auto-flow:row; grid-auto-rows: 1fr; overflow:auto; }
+    :root{ --row-h:60px; --role-slots:8; --detail-slots:12; }
+    .terminal-grid{ height: calc(100vh - 200px); }
+  }
+
+  footer{ color: rgba(0,255,0,0.45); font-size:0.85rem; margin-top:12px; text-align:center; padding-bottom:12px; }
+</style>
 </head>
 <body>
-  <div class="content">
-    <h1>Matt Beyerle</h1>
+  <div class="page">
+    <div class="content">
+      <header>
+        <h1>Matt Beyerle</h1>
+        <nav>
+          <a href="index.html">Home</a>
+          <a href="career.html" aria-current="page">Career</a>
+          <a href="health.html">Health</a>
+          <a href="thinking.html">Thinking</a>
+          <a href="citizenship.html">Citizenship</a>
+        </nav>
+      </header>
 
-    <nav>
-      <a href="index.html">Career</a>
-      <a href="health.html">Health</a>
-      <a href="thinking.html">Thinking</a>
-      <a href="citizenship.html">Citizenship</a>
-    </nav>
-
-    <div class="terminal-grid">
-      <!-- Top Blank Rows -->
-      <div class="terminal-blank"></div>
-      <div class="terminal-blank"></div>
-      <div class="terminal-blank"></div>
-      <div class="terminal-blank"></div>
-
-      <!-- Blinking cursor input -->
-      <div>
-        <span class="terminal-cursor"></span>
-      </div>
-      <div>
-        <input type="text" placeholder="Type here..." />
+      <div class="terminal-wrap" role="application" aria-label="Career terminal spreadsheet">
+        <div class="terminal-grid" id="terminalGrid">
+          <!-- Rows will be injected by JS -->
+        </div>
       </div>
 
-      <!-- Header Row -->
-      <div><strong>Role</strong></div>
-      <div><strong>Details</strong></div>
-
-      <!-- Job #1 -->
-      <div>Senior Associate, FDD</div>
-      <div>
-        Oct 2022 – Present
-        • Led diligence on 35+ M&A targets for corporate and PE clients
-        • Identified EBITDA, working capital, and debt-like adjustments using:
-        - Trend analysis of monthly P&L, pricing/mix, cost structures
-        - GL-level opex review (e.g., personnel, occupancy)
-        - Working capital and balance sheet walkthroughs
-        • Managed 4–6 team members, coordinating global teams
-        • Presented findings in client-facing QoE reports
-      </div>
-
-      <!-- Job #2 -->
-      <div>Associate, FDD</div>
-      <div>
-        Jul 2021 – Sep 2022
-        • Transformed raw trial balance data into financial statements
-        • Flagged trends and anomalies for QoE reports
-        • Developed info request lists and meeting agendas
-      </div>
-
-      <!-- Job #3 -->
-      <div>Associate, Corporate Strategy</div>
-      <div>
-        Jan 2021 – Jul 2021
-        • Assessed modeling assumptions for strategic investments
-        • Validated revenue/cost synergies and commercial viability
-        • Partnered with FDD to align findings and timelines
-      </div>
-
-      <!-- Job #4 -->
-      <div>Intern, Deal Advisory</div>
-      <div>
-        Jan 2019 – Mar 2019
-        • Drafted post-merger MD&A for global confectioner
-        • Supported diligence for logistics acquisition
-      </div>
-
-      <!-- Bottom Blank Rows -->
-      <div class="terminal-blank"></div>
-      <div class="terminal-blank"></div>
-      <div class="terminal-blank"></div>
-      <div class="terminal-blank"></div>
+      <footer>© 2025 Matt Beyerle</footer>
     </div>
-
-    <div class="footer">© 2025 Matt Beyerle</div>
   </div>
+
+<script>
+/*
+  Strategy:
+  - We create a sequence of rows.
+  - Each logical "row" contains two groups: role (fixed number of slots) and details (chunked).
+  - Role text placed on the first row for that job; subsequent rows for the same job have empty role slots (inputs).
+  - Every "slot" is a bordered box. If there's no word to put into a slot, we place an input element.
+*/
+
+/* Your resume content (unchanged wording) */
+const jobs = [
+  {
+    role: "Senior Associate, FDD",
+    details: `Oct 2022 – Present • Led diligence on 35+ M&A targets for corporate and PE clients • Identified EBITDA, working capital, and debt-like adjustments using: - Trend analysis of monthly P&L, pricing/mix, cost structures - GL-level opex review (e.g., personnel, occupancy) - Working capital and balance sheet walkthroughs • Managed 4–6 team members, coordinating global teams • Presented findings in client-facing QoE reports`
+  },
+  {
+    role: "Associate, FDD",
+    details: `Jul 2021 – Sep 2022 • Transformed raw trial balance data into financial statements • Flagged trends and anomalies for QoE reports • Developed info request lists and meeting agendas`
+  },
+  {
+    role: "Associate, Corporate Strategy",
+    details: `Jan 2021 – Jul 2021 • Assessed modeling assumptions for strategic investments • Validated revenue/cost synergies and commercial viability • Partnered with FDD to align findings and timelines`
+  },
+  {
+    role: "Intern, Deal Advisory",
+    details: `Jan 2019 – Mar 2019 • Drafted post-merger MD&A for global confectioner • Supported diligence for logistics acquisition`
+  }
+];
+
+/* Controls for slot counts */
+const ROLE_SLOTS = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--role-slots')) || 6;
+const DETAIL_SLOTS = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--detail-slots')) || 30;
+
+/* Utility: split text into words (preserve punctuation like bullets as tokens) */
+function splitWords(text){
+  // split on spaces but keep punctuation attached; we want bullets like '•' and hyphen items preserved
+  return text.split(/\s+/).filter(Boolean);
+}
+
+/* Chunk an array into pieces */
+function chunk(arr, size){
+  const out = [];
+  for(let i=0;i<arr.length;i+=size) out.push(arr.slice(i,i+size));
+  return out;
+}
+
+/* Create a row DOM element */
+function makeRow(isHeader=false){
+  const row = document.createElement('div');
+  row.className = 'grid-row' + (isHeader ? ' header-row' : '');
+  // left: role container
+  const left = document.createElement('div');
+  left.className = 'cell-group role-group';
+  // right: details container
+  const right = document.createElement('div');
+  right.className = 'cell-group details-group';
+  row.appendChild(left);
+  row.appendChild(right);
+  return {row,left,right};
+}
+
+/* Fill a cell group with words (up to 'slots'). Return number of slots used. */
+function fillGroupWithWords(container, words, slots){
+  let used = 0;
+  for(let i=0;i<slots;i++){
+    if(words && words[i]){
+      const wc = document.createElement('div');
+      wc.className = 'word-cell';
+      wc.textContent = words[i];
+      container.appendChild(wc);
+      used++;
+    } else {
+      // empty -> input
+      const inp = document.createElement('input');
+      inp.className = 'word-input';
+      inp.setAttribute('placeholder','');
+      inp.setAttribute('aria-label','empty cell input');
+      container.appendChild(inp);
+    }
+  }
+  return used;
+}
+
+/* Fill a group with an array of words (already chunked to fit slots) */
+function fillExactGroup(container, chunkedWords, slots){
+  for(let i=0;i<slots;i++){
+    const token = chunkedWords[i];
+    if(token !== undefined){
+      const wc = document.createElement('div');
+      wc.className = 'word-cell';
+      wc.textContent = token;
+      container.appendChild(wc);
+    } else {
+      const inp = document.createElement('input');
+      inp.className = 'word-input';
+      inp.setAttribute('placeholder','');
+      inp.setAttribute('aria-label','empty cell input');
+      container.appendChild(inp);
+    }
+  }
+}
+
+/* Build grid */
+const grid = document.getElementById('terminalGrid');
+
+// top blank rows (4 rows like original)
+for(let i=0;i<4;i++){
+  const {row,left,right} = makeRow();
+  // fill with inputs (blank)
+  fillExactGroup(left, [], ROLE_SLOTS);
+  fillExactGroup(right, [], DETAIL_SLOTS);
+  grid.appendChild(row);
+}
+
+// header row
+{
+  const {row,left,right} = makeRow(true);
+  // put "Role" across left first slot(s)
+  const roleWords = ["Role"];
+  fillExactGroup(left, roleWords.concat([]), ROLE_SLOTS);
+  const detailWords = ["Details"];
+  fillExactGroup(right, detailWords.concat([]), DETAIL_SLOTS);
+  grid.appendChild(row);
+}
+
+// For each job, chunk details into DETAIL_SLOTS-per-row pieces
+jobs.forEach(job => {
+  const roleWords = splitWords(job.role);
+  const detailWords = splitWords(job.details);
+
+  const detailChunks = chunk(detailWords, DETAIL_SLOTS);
+
+  detailChunks.forEach((chunkWords, index) => {
+    const {row,left,right} = makeRow();
+    if(index===0){
+      // first row: place role words in left, padded to ROLE_SLOTS
+      // If role has more words than ROLE_SLOTS, truncate last words into final slot as joined string
+      const leftTokens = [];
+      if(roleWords.length <= ROLE_SLOTS){
+        leftTokens.push(...roleWords);
+      } else {
+        // more words than slots: put all but last few concatenated in final slot
+        leftTokens.push(...roleWords.slice(0, ROLE_SLOTS-1));
+        leftTokens.push(roleWords.slice(ROLE_SLOTS-1).join(' '));
+      }
+      fillExactGroup(left, leftTokens, ROLE_SLOTS);
+    } else {
+      // subsequent rows: empty role slots (inputs)
+      fillExactGroup(left, [], ROLE_SLOTS);
+    }
+
+    // Fill details with chunkWords (up to DETAIL_SLOTS)
+    fillExactGroup(right, chunkWords, DETAIL_SLOTS);
+
+    grid.appendChild(row);
+  });
+});
+
+// bottom blank rows (4 rows)
+for(let i=0;i<4;i++){
+  const {row,left,right} = makeRow();
+  fillExactGroup(left, [], ROLE_SLOTS);
+  fillExactGroup(right, [], DETAIL_SLOTS);
+  grid.appendChild(row);
+}
+
+/* Optional: allow pressing Enter in inputs to focus next input */
+document.addEventListener('keydown', (e)=>{
+  if(e.key === 'Enter' && document.activeElement && document.activeElement.classList.contains('word-input')){
+    e.preventDefault();
+    const inputs = Array.from(document.querySelectorAll('.word-input'));
+    const idx = inputs.indexOf(document.activeElement);
+    if(idx >= 0 && idx < inputs.length - 1) inputs[idx+1].focus();
+  }
+});
+</script>
 </body>
 </html>
