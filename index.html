@@ -1,243 +1,27 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Matt Beyerle</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="icon" href="favicon.ico" type="image/x-icon">
-  <link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
-  <style>
-    body {
-      margin: 0;
-      padding: 2rem;
-      background-color: #000;
-      font-family: 'Libre Baskerville', serif;
-      color: #fff;
-    }
-
-    .content {
-      max-width: 900px;
-      margin: 0 auto;
-    }
-
-    h1 {
-      font-size: 2.5rem;
-      margin-bottom: 1.5rem;
-    }
-
-    nav {
-      display: flex;
-      justify-content: space-between;
-      gap: 2rem;
-      margin-bottom: 3rem;
-      border-bottom: 1px solid #444;
-      padding-bottom: 0.5rem;
-      flex-wrap: wrap;
-    }
-
-    nav a {
-      text-decoration: none;
-      color: #fff;
-      font-weight: bold;
-      padding-bottom: 0.25rem;
-      position: relative;
-    }
-
-    nav a:hover::after {
-      content: '';
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      width: 100%;
-      height: 2px;
-      background-color: #fff;
-    }
-
-    .tab-content {
-      display: none;
-    }
-
-    .tab-content.active {
-      display: block;
-    }
-
-    .tab-content a {
-      display: block;
-      margin: 0.5rem 0;
-      text-decoration: none;
-      color: #ddd;
-      font-weight: bold;
-      transition: color 0.3s;
-    }
-
-    .tab-content a:hover {
-      color: #fff;
-    }
-
-    .footer {
-      margin-top: 3rem;
-      font-size: 0.85rem;
-      color: #666;
-    }
-
-    @media (max-width: 600px) {
-      nav {
-        flex-direction: column;
-        gap: 1rem;
-      }
-    }
-  </style>
+  <meta charset="UTF-8" />
+  <title>Matt Beyerle | Home</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="icon" href="favicon.ico" type="image/x-icon" />
+  <link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <div class="content">
-    <h1>Matt Beyerle</h1>
+    <h1>Welcome to Matt Beyerle's Website</h1>
 
     <nav>
-      <a href="#" onclick="showTab('career')">Career</a>
-      <a href="#" onclick="showTab('health')">Health</a>
-      <a href="#" onclick="showTab('thinking')">Thinking</a>
-      <a href="#" onclick="showTab('citizenship')">Citizenship</a>
+      <a href="career.html">Career</a>
+      <a href="health.html">Health</a>
+      <a href="thinking.html">Thinking</a>
+      <a href="citizenship.html">Citizenship</a>
     </nav>
 
-<div id="career" class="tab-content active" style="margin: 0 -2rem;">
-  <style>
-    .terminal-grid {
-      display: grid;
-      grid-template-columns: 250px 1fr;
-      width: 100vw;
-      font-family: 'Courier New', monospace;
-      background-color: #000;
-      color: #00ff00;
-      border-collapse: collapse;
-    }
-
-    .terminal-grid div,
-    .terminal-grid input {
-      border: 1px solid #00ff00;
-      padding: 0.5rem;
-      white-space: pre-wrap;
-      overflow-wrap: break-word;
-    }
-
-    .terminal-grid input {
-      background: transparent;
-      color: #00ff00;
-      border: none;
-      outline: none;
-      width: 100%;
-    }
-
-    .terminal-cursor::after {
-      content: "";
-      display: inline-block;
-      width: 8px;
-      height: 1.2em;
-      background-color: #00ff00;
-      animation: blink 1s step-start 0s infinite;
-      vertical-align: bottom;
-      margin-left: 4px;
-    }
-
-    @keyframes blink {
-      50% { opacity: 0; }
-    }
-
-    .terminal-blank {
-      border: 1px solid #00ff00;
-      padding: 0.5rem;
-      height: 2rem;
-    }
-  </style>
-
-  <div class="terminal-grid">
-    <!-- Top Blank Rows -->
-    <div class="terminal-blank"></div>
-    <div class="terminal-blank"></div>
-    <div class="terminal-blank"></div>
-    <div class="terminal-blank"></div>
-
-    <!-- Blinking cursor input -->
-    <div>
-      <span class="terminal-cursor"></span>
-    </div>
-    <div>
-      <input type="text" placeholder="Type here..." />
-    </div>
-
-    <!-- Header Row -->
-    <div><strong>Role</strong></div>
-    <div><strong>Details</strong></div>
-
-    <!-- Job #1 -->
-    <div>Senior Associate, FDD</div>
-    <div>
-      Oct 2022 – Present
-      • Led diligence on 35+ M&A targets for corporate and PE clients
-      • Identified EBITDA, working capital, and debt-like adjustments using:
-        - Trend analysis of monthly P&L, pricing/mix, cost structures
-        - GL-level opex review (e.g., personnel, occupancy)
-        - Working capital and balance sheet walkthroughs
-      • Managed 4–6 team members, coordinating global teams
-      • Presented findings in client-facing QoE reports
-    </div>
-
-    <!-- Job #2 -->
-    <div>Associate, FDD</div>
-    <div>
-      Jul 2021 – Sep 2022
-      • Transformed raw trial balance data into financial statements
-      • Flagged trends and anomalies for QoE reports
-      • Developed info request lists and meeting agendas
-    </div>
-
-    <!-- Job #3 -->
-    <div>Associate, Corporate Strategy</div>
-    <div>
-      Jan 2021 – Jul 2021
-      • Assessed modeling assumptions for strategic investments
-      • Validated revenue/cost synergies and commercial viability
-      • Partnered with FDD to align findings and timelines
-    </div>
-
-    <!-- Job #4 -->
-    <div>Intern, Deal Advisory</div>
-    <div>
-      Jan 2019 – Mar 2019
-      • Drafted post-merger MD&A for global confectioner
-      • Supported diligence for logistics acquisition
-    </div>
-
-    <!-- Bottom Blank Rows -->
-    <div class="terminal-blank"></div>
-    <div class="terminal-blank"></div>
-    <div class="terminal-blank"></div>
-    <div class="terminal-blank"></div>
-  </div>
-</div>
-
-
-    <div id="health" class="tab-content">
-      <a href="https://www.strava.com/athletes/16912919" target="_blank">Strava | Outdoor activities</a>
-    </div>
-
-    <div id="thinking" class="tab-content">
-      <a href="https://matthewbeyerle.medium.com/" target="_blank">Medium | Some musings of mine</a>
-      <a href="https://www.goodreads.com/user/show/61905171-matt" target="_blank">Goodreads | Books I've reviewed</a>
-    </div>
-
-    <div id="citizenship" class="tab-content">
-      <!-- Content to be added later -->
-    </div>
+    <p>Please select a tab above to view the content.</p>
 
     <div class="footer">© 2025 Matt Beyerle</div>
   </div>
-
-  <script>
-    function showTab(id) {
-      const tabs = document.querySelectorAll('.tab-content');
-      tabs.forEach(tab => tab.classList.remove('active'));
-      document.getElementById(id).classList.add('active');
-    }
-  </script>
 </body>
 </html>
