@@ -1,120 +1,355 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Tibi Color Wheel Prototype</title>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Tibi Color Wheel — Demo</title>
 <style>
-  body {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    background: #f8f8f8;
-    height: 100vh;
-    margin: 0;
+  :root{
+    --size: 720px;
+    --bg: #fafafa;
+    --ui: #222;
+    --muted: #666;
   }
-  svg {
-    max-width: 90vw;
-    max-height: 90vh;
-    cursor: grab;
-  }
-  svg:active {
-    cursor: grabbing;
-  }
+  html,body{height:100%;margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;}
+  body{display:flex;align-items:center;justify-content:center;background:var(--bg);color:var(--ui);padding:24px}
+  .wrap{width:min(var(--size),95vw);text-align:center;}
+  h1{margin:6px 0 12px;font-size:20px}
+  .canvas-wrap{background:white;border-radius:12px;padding:12px;box-shadow:0 6px 18px rgba(0,0,0,.08);display:flex;gap:12px;align-items:center;justify-content:center}
+  svg{touch-action: none; display:block; max-width:100%;}
+  .controls{display:flex;flex-direction:column;gap:8px;margin-left:12px;min-width:160px}
+  .ring-controls{display:flex;flex-direction:column;background:#fcfcfc;border-radius:8px;padding:8px;gap:6px;border:1px solid #eee}
+  .row{display:flex;gap:6px;align-items:center;justify-content:space-between}
+  button{padding:6px 8px;border-radius:6px;border:1px solid #ddd;background:white;cursor:pointer}
+  button.primary{background:#111;color:white;border-color:transparent}
+  .small{font-size:13px;padding:6px}
+  .muted{color:var(--muted);font-size:13px}
+  .legend{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin-top:8px}
+  .chip{display:flex;gap:8px;align-items:center;padding:4px 6px;border-radius:6px;border:1px solid #eee;background:#fff}
+  .chip .sw{width:18px;height:18px;border-radius:3px;border:1px solid #ddd}
+  .hint{margin-top:10px;font-size:13px;color:var(--muted)}
+  /* highlight style for selected slices */
+  .slice-highlight { filter: drop-shadow(0 2px 6px rgba(0,0,0,.12)); stroke:#fff; stroke-width:2px; }
 </style>
 </head>
 <body>
+  <div class="wrap">
+    <h1>Tibi Color Wheel — Interactive Demo</h1>
+    <div class="canvas-wrap">
+      <svg id="wheel" viewBox="0 0 600 600" width="600" height="600" aria-label="Tibi Color Wheel">
+        <defs>
+          <filter id="softGlow" x="-50%" y="-50%" width="200%" height="200%">
+            <feDropShadow dx="0" dy="3" stdDeviation="6" flood-opacity="0.08"/>
+          </filter>
+        </defs>
 
-<svg id="color-wheel" viewBox="0 0 500 500">
-  <!-- Ring 1 -->
-  <g id="ring1">
-    <circle cx="250" cy="250" r="60" fill="none" stroke="#555" stroke-width="50" />
-  </g>
+        <!-- Group order: outermost first -->
+        <g id="ring4" data-ring="4"></g>
+        <g id="ring3" data-ring="3"></g>
+        <g id="ring2" data-ring="2"></g>
+        <g id="ring1" data-ring="1"></g>
 
-  <!-- Ring 2 -->
-  <g id="ring2">
-    <circle cx="250" cy="250" r="120" fill="none" stroke="#f66" stroke-width="50" />
-  </g>
+        <!-- center marker -->
+        <circle cx="300" cy="300" r="8" fill="#111" opacity="0.85"/>
+      </svg>
 
-  <!-- Ring 3 -->
-  <g id="ring3">
-    <circle cx="250" cy="250" r="180" fill="none" stroke="#6f6" stroke-width="50" />
-  </g>
+      <div class="controls">
+        <div class="ring-controls">
+          <div class="row"><strong>Controls</strong><span class="muted">Drag a ring to rotate • Tap a slice to highlight</span></div>
+          <div class="row"><button id="resetAll" class="small">Reset All</button><button id="snap" class="small">Snap Nearest 30°</button></div>
+        </div>
 
-  <!-- Ring 4 -->
-  <g id="ring4">
-    <circle cx="250" cy="250" r="240" fill="none" stroke="#66f" stroke-width="50" />
-  </g>
-</svg>
+        <div class="ring-controls">
+          <div style="font-weight:600">Rings</div>
+
+          <div class="row">
+            <div>Ring 4 (Brights)</div>
+            <div style="display:flex;gap:6px">
+              <button data-ring="4" class="lockBtn small">Lock</button>
+              <button data-ring="4" class="resetBtn small">Reset</button>
+            </div>
+          </div>
+
+          <div class="row">
+            <div>Ring 3 (No-color / muted)</div>
+            <div style="display:flex;gap:6px">
+              <button data-ring="3" class="lockBtn small">Lock</button>
+              <button data-ring="3" class="resetBtn small">Reset</button>
+            </div>
+          </div>
+
+          <div class="row">
+            <div>Ring 2 (Neutrals)</div>
+            <div style="display:flex;gap:6px">
+              <button data-ring="2" class="lockBtn small">Lock</button>
+              <button data-ring="2" class="resetBtn small">Reset</button>
+            </div>
+          </div>
+
+          <div class="row">
+            <div>Ring 1 (Anchors)</div>
+            <div style="display:flex;gap:6px">
+              <button data-ring="1" class="lockBtn small">Lock</button>
+              <button data-ring="1" class="resetBtn small">Reset</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="ring-controls">
+          <div style="font-weight:600">Legend (sample)</div>
+          <div class="legend" id="legend"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="hint">Tip: drag any ring by clicking near its middle area. On touch, press & move. Click a slice to highlight matching color across rings.</div>
+  </div>
 
 <script>
-(function() {
-  const svg = document.getElementById("color-wheel");
-  const rings = ["ring1", "ring2", "ring3", "ring4"].map(id => document.getElementById(id));
+/*
+Tibi Color Wheel — interactive segmented wheel
+- 12 segments
+- 4 rings (1..4)
+- Each ring can be rotated independently by dragging
+- Click a slice to highlight corresponding slices (same index) across all rings
+- Lock/reset/snap controls included
 
-  let activeRing = null;
-  let startAngle = 0;
-  let currentRotation = new Map(rings.map(r => [r.id, 0]));
+Precise hex colors are approximations of Tibi's official palette (visual sampling).
+Official Tibi color wheel reference: https://tibi.com/pages/the-color-wheel
+*/
 
-  function getAngle(evt) {
-    const pt = svg.createSVGPoint();
-    pt.x = evt.clientX;
-    pt.y = evt.clientY;
-    const cursor = pt.matrixTransform(svg.getScreenCTM().inverse());
-    const dx = cursor.x - 250;
-    const dy = cursor.y - 250;
-    return Math.atan2(dy, dx) * (180 / Math.PI);
+(function(){
+  const svg = document.getElementById('wheel');
+  const cx = 300, cy = 300;
+  const segments = 12;
+  // radii for rings [innerRadius, outerRadius] from center (ring1 is innermost)
+  const ringConfig = {
+    1: {rIn: 0, rOut: 60},
+    2: {rIn: 70, rOut: 140},
+    3: {rIn: 150, rOut: 240},
+    4: {rIn: 250, rOut: 300}
+  };
+
+  // Approximate color palettes (12 entries each) visually matched to Tibi wheel.
+  // If you want exact hexes, I can sample the official image and replace these.
+  const colors = {
+    1: [ // Ring 1: anchors / blacks / deep neutrals
+      '#0A0A0A','#121212','#1A1A1A','#202024','#2B2B2B','#1C1B1A',
+      '#151417','#0C0C0C','#070707','#161616','#1B1B1B','#111111'
+    ],
+    2: [ // Ring 2: neutrals (whites, creams, sands, camel, grey)
+      '#FFFFFF','#F8F3EC','#EFE6D8','#E6D8C3','#D2B89B','#C4AA8D',
+      '#BFB7B0','#A9A6A2','#8F8A82','#7A7974','#6A6A66','#4F4F4F'
+    ],
+    3: [ // Ring 3: "no-color" / muted tones
+      '#D8C7C9','#C8B9C2','#BFB2C3','#B6B0C2','#9E9FB1','#9AA4A2',
+      '#9CBBAA','#A7C6B0','#C7D9C8','#D8E3DA','#E6D6D7','#D6CFCF'
+    ],
+    4: [ // Ring 4: bright / bold colors
+      '#E23E3E','#FF9F1C','#FFD166','#FFED66','#B6E86A','#58C68B',
+      '#34B1C9','#4B8BFF','#8456E0','#FF6FB1','#FF8DAA','#FF3E6B'
+    ]
+  };
+
+  // Create rings and slices
+  for (let ring = 4; ring >= 1; ring--) {
+    const g = document.getElementById('ring' + ring);
+    g.setAttribute('transform', 'rotate(0 ' + cx + ' ' + cy + ')');
+    g.dataset.rotation = '0';
+    const pal = colors[ring];
+    for (let i = 0; i < segments; i++) {
+      const startAngle = (i / segments) * 360;
+      const endAngle = ((i+1) / segments) * 360;
+      const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+      const d = sectorPath(cx,cy, ringConfig[ring].rIn, ringConfig[ring].rOut, startAngle, endAngle);
+      path.setAttribute('d', d);
+      path.setAttribute('fill', pal[i % pal.length]);
+      path.setAttribute('data-index', i);
+      path.setAttribute('data-ring', ring);
+      path.style.cursor = 'pointer';
+      path.style.transition = 'transform .08s';
+      path.addEventListener('click', onSliceClick);
+      g.appendChild(path);
+    }
   }
 
-  svg.addEventListener("mousedown", evt => {
-    if (evt.target.closest("g")) {
-      activeRing = evt.target.closest("g");
-      startAngle = getAngle(evt) - currentRotation.get(activeRing.id);
+  // Add legend chips (first 6 of ring4 as sample)
+  const legend = document.getElementById('legend');
+  for (let i=0;i<6;i++){
+    const chip = document.createElement('div'); chip.className='chip';
+    const sw = document.createElement('div'); sw.className='sw'; sw.style.background = colors[4][i];
+    const label = document.createElement('div'); label.textContent = 'Ring4 - ' + (i+1);
+    chip.appendChild(sw); chip.appendChild(label); legend.appendChild(chip);
+  }
+
+  function sectorPath(cx,cy, r1, r2, startDeg, endDeg){
+    // returns an SVG path that draws a ring-sector from startDeg to endDeg (degrees),
+    // outer arc from start->end, inner arc from end->start (clockwise)
+    const start = polarToCartesian(cx,cy,r2,endDeg);
+    const end = polarToCartesian(cx,cy,r2,startDeg);
+    const innerStart = polarToCartesian(cx,cy,r1,startDeg);
+    const innerEnd = polarToCartesian(cx,cy,r1,endDeg);
+
+    const largeArc = (endDeg - startDeg) % 360 > 180 ? 1 : 0;
+
+    // If r1 == 0, draw wedge (triangle-like)
+    if (r1 <= 0.001) {
+      return [
+        `M ${cx} ${cy}`,
+        `L ${start.x} ${start.y}`,
+        `A ${r2} ${r2} 0 ${largeArc} 0 ${end.x} ${end.y}`,
+        `Z`
+      ].join(' ');
+    }
+
+    return [
+      `M ${start.x} ${start.y}`,
+      `A ${r2} ${r2} 0 ${largeArc} 0 ${end.x} ${end.y}`,
+      `L ${innerEnd.x} ${innerEnd.y}`,
+      `A ${r1} ${r1} 0 ${largeArc} 1 ${innerStart.x} ${innerStart.y}`,
+      `Z`
+    ].join(' ');
+  }
+
+  function polarToCartesian(cx,cy,r,deg){
+    const rad = (deg - 90) * Math.PI / 180.0;
+    return { x: cx + (r * Math.cos(rad)), y: cy + (r * Math.sin(rad)) };
+  }
+
+  // Dragging/rotation logic
+  let active = null; // {ringEl, startAngle, startRotation}
+  const ringEls = [1,2,3,4].map(n => document.getElementById('ring'+n));
+  const locks = {1:false,2:false,3:false,4:false};
+
+  function getPointerAngle(evt){
+    const p = (evt.touches && evt.touches[0]) ? evt.touches[0] : evt;
+    const pt = svg.createSVGPoint();
+    pt.x = p.clientX; pt.y = p.clientY;
+    const cursor = pt.matrixTransform(svg.getScreenCTM().inverse());
+    const dx = cursor.x - cx, dy = cursor.y - cy;
+    return Math.atan2(dy,dx) * 180 / Math.PI;
+  }
+
+  // Find ring group from event target (closest g)
+  function ringFromEventTarget(target){
+    return target.closest ? target.closest('g') : null;
+  }
+
+  svg.addEventListener('pointerdown', function(evt){
+    if (evt.button !== undefined && evt.button !== 0) return; // only left
+    const g = ringFromEventTarget(evt.target);
+    if (!g) return;
+    const ringNum = parseInt(g.dataset.ring,10);
+    if (locks[ringNum]) return;
+    svg.setPointerCapture(evt.pointerId);
+    active = { ringEl: g, startAngle: getPointerAngle(evt), startRotation: parseFloat(g.dataset.rotation) || 0, pointerId: evt.pointerId };
+    evt.preventDefault();
+  });
+
+  window.addEventListener('pointermove', function(evt){
+    if (!active || active.pointerId !== evt.pointerId) return;
+    const angleNow = getPointerAngle(evt);
+    let delta = angleNow - active.startAngle;
+    // Normalize delta to avoid big jumps
+    if (delta > 180) delta -= 360;
+    if (delta < -180) delta += 360;
+    const newRot = active.startRotation + delta;
+    active.ringEl.dataset.rotation = newRot;
+    active.ringEl.setAttribute('transform', `rotate(${newRot} ${cx} ${cy})`);
+  });
+
+  window.addEventListener('pointerup', function(evt){
+    if (!active || active.pointerId !== evt.pointerId) return;
+    svg.releasePointerCapture && svg.releasePointerCapture(evt.pointerId);
+    active = null;
+  });
+
+  // touch fallback handled by pointer events above
+
+  // Slice click -> highlight matching slices across rings (same index)
+  let highlightedIndex = null;
+  function onSliceClick(evt){
+    evt.stopPropagation();
+    const idx = parseInt(evt.currentTarget.dataset.index,10);
+    if (highlightedIndex === idx) {
+      clearHighlights();
+      highlightedIndex = null;
+    } else {
+      highlightedIndex = idx;
+      applyHighlights(idx);
+    }
+  }
+
+  function applyHighlights(idx){
+    // remove previous
+    clearHighlights();
+    for (let r=1;r<=4;r++){
+      const g = document.getElementById('ring'+r);
+      const slice = g.querySelector('path[data-index="'+idx+'"]');
+      if (slice) slice.classList.add('slice-highlight');
+    }
+  }
+
+  function clearHighlights(){
+    svg.querySelectorAll('.slice-highlight').forEach(el => el.classList.remove('slice-highlight'));
+  }
+
+  // buttons: lock & reset
+  document.querySelectorAll('.lockBtn').forEach(btn=>{
+    btn.addEventListener('click',(e)=>{
+      const r = parseInt(btn.dataset.ring,10);
+      locks[r] = !locks[r];
+      btn.textContent = locks[r] ? 'Locked' : 'Lock';
+      btn.style.background = locks[r] ? '#111' : 'white';
+      btn.style.color = locks[r] ? 'white' : 'inherit';
+    });
+  });
+
+  document.querySelectorAll('.resetBtn').forEach(btn=>{
+    btn.addEventListener('click',(e)=>{
+      const r = parseInt(btn.dataset.ring,10);
+      rotateTo(r,0);
+    });
+  });
+
+  document.getElementById('resetAll').addEventListener('click', ()=> {
+    for (let r=1; r<=4; r++) rotateTo(r,0);
+    clearHighlights();
+  });
+
+  document.getElementById('snap').addEventListener('click', ()=> {
+    // snap each ring to nearest 30 degrees (12 segments -> 30°)
+    for (let r=1;r<=4;r++){
+      const g = document.getElementById('ring'+r);
+      const cur = parseFloat(g.dataset.rotation) || 0;
+      const snapped = Math.round(cur / 30) * 30;
+      rotateTo(r, snapped);
     }
   });
 
-  svg.addEventListener("mousemove", evt => {
-    if (activeRing) {
-      const angle = getAngle(evt) - startAngle;
-      currentRotation.set(activeRing.id, angle);
-      activeRing.setAttribute("transform", `rotate(${angle} 250 250)`);
+  function rotateTo(ringNum, angle){
+    const g = document.getElementById('ring'+ringNum);
+    g.dataset.rotation = angle;
+    g.setAttribute('transform', `rotate(${angle} ${cx} ${cy})`);
+  }
+
+  // click on empty area clears highlight
+  svg.addEventListener('click', (e)=> {
+    if (e.target === svg) { clearHighlights(); highlightedIndex = null; }
+  });
+
+  // optional: keyboard to nudge selected ring (not required)
+  window.addEventListener('keydown', (e)=>{
+    // use number keys 1-4 to select a ring for nudge
+    if (e.key >= '1' && e.key <= '4') {
+      const r = parseInt(e.key,10);
+      const g = document.getElementById('ring'+r);
+      const cur = parseFloat(g.dataset.rotation) || 0;
+      rotateTo(r, cur + 30); // nudge 30°
     }
-  });
-
-  svg.addEventListener("mouseup", () => {
-    activeRing = null;
-  });
-
-  svg.addEventListener("mouseleave", () => {
-    activeRing = null;
-  });
-
-  // For touch devices
-  svg.addEventListener("touchstart", evt => {
-    const touch = evt.touches[0];
-    const targetRing = document.elementFromPoint(touch.clientX, touch.clientY)?.closest("g");
-    if (targetRing) {
-      activeRing = targetRing;
-      startAngle = getAngle(touch) - currentRotation.get(activeRing.id);
-    }
-  });
-
-  svg.addEventListener("touchmove", evt => {
-    if (activeRing) {
-      const touch = evt.touches[0];
-      const angle = getAngle(touch) - startAngle;
-      currentRotation.set(activeRing.id, angle);
-      activeRing.setAttribute("transform", `rotate(${angle} 250 250)`);
-    }
-  });
-
-  svg.addEventListener("touchend", () => {
-    activeRing = null;
   });
 
 })();
 </script>
-
 </body>
 </html>
-
