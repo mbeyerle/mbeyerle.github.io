@@ -3,11 +3,11 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Tibi Color Wheel — Demo (image-matched)</title>
+<title>Tibi Color Wheel — Pie-slice stacked (no gaps)</title>
 <style>
   :root{
     --size:760px;
-    --bg:#000; /* match the black background in your reference */
+    --bg:#000;
     --ui:#fff;
   }
   html,body{height:100%;margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;}
@@ -16,29 +16,24 @@
   h1{color:#fff;margin:6px 0 12px;font-size:18px}
   .canvas-wrap{background:transparent;border-radius:12px;padding:12px;display:flex;gap:12px;align-items:center;justify-content:center}
   svg{touch-action:none; display:block; max-width:100%;}
-  .controls{display:none} /* hidden to focus on the visual match — keep interactions via pointer */
-  /* highlight style */
+  .slice { stroke:none; shape-rendering:geometricPrecision; pointer-events:auto; cursor:pointer; }
   .slice-highlight { filter: drop-shadow(0 4px 12px rgba(0,0,0,.55)); stroke:#ffffffcc; stroke-width:3; }
-  /* no strokes on slices so there are no visible gaps */
-  .slice { stroke:none; shape-rendering:geometricPrecision; }
-  /* center label */
   .center-label { font-family: "Libre Baskerville", Georgia, serif; font-weight:700; fill:#fff; text-anchor:middle; dominant-baseline:middle; letter-spacing:2px; }
 </style>
 </head>
 <body>
   <div class="wrap">
-    <h1>Tibi Color Wheel — Interactive (image-matched palette)</h1>
+    <h1>Tibi Color Wheel — Pie-slice stacked (no gaps)</h1>
     <div class="canvas-wrap">
-      <!-- Viewbox 0..600 chosen for easy math; center at 300,300 -->
       <svg id="wheel" viewBox="0 0 600 600" width="720" height="720" aria-label="Tibi Color Wheel">
-        <!-- rings layers (outer first) -->
+        <!-- groups (outer first so inner rings paint on top) -->
         <g id="ring4" data-ring="4" transform="rotate(0 300 300)"></g>
         <g id="ring3" data-ring="3" transform="rotate(0 300 300)"></g>
         <g id="ring2" data-ring="2" transform="rotate(0 300 300)"></g>
         <g id="ring1" data-ring="1" transform="rotate(0 300 300)"></g>
 
-        <!-- black center disk -->
-        <circle cx="300" cy="300" r="48" fill="#050505"/>
+        <!-- final center cover so center is a clean disk -->
+        <circle id="centerDisk" cx="300" cy="300" r="48" fill="#050505"/>
         <text class="center-label" x="300" y="300" font-size="22">T i b i</text>
       </svg>
     </div>
@@ -46,101 +41,77 @@
 
 <script>
 /*
-Interactive Tibi wheel — image-matched colors (sampled from user's image)
-- 12 segments
-- 4 rings (ring1 innermost anchors, ring2 neutrals, ring3 muted, ring4 brights)
-- Drag any ring to rotate; click a slice to highlight corresponding slices across rings.
-- No stroke on slices and a tiny angular overlap to prevent seams.
+Pie-wedge stacked wheel:
+- Each slice for a ring is drawn as a full wedge (center -> outerRadius arc -> center)
+- Rings are drawn outer -> inner so inner rings sit on top
+- Small overlapDeg applied to slices to mitigate anti-alias seams
+- Drag groups (rings) to rotate independently; click slice to highlight across rings
 */
 
 (function(){
   const svg = document.getElementById('wheel');
   const cx = 300, cy = 300;
   const segments = 12;
-  // radii for rings (inner->outer)
+
+  // ring radii
   const ringConfig = {
-    1: {rIn: 4, rOut: 60},
-    2: {rIn: 70, rOut: 140},
-    3: {rIn: 150, rOut: 240},
-    4: {rIn: 250, rOut: 300}
+    1: {rOut: 60},
+    2: {rOut: 140},
+    3: {rOut: 240},
+    4: {rOut: 300}
   };
 
-  // -- Exact sampled colors from your image (12 per ring) --
-  // ring1 (anchors)
-  const colors1 = [
-    "#040706","#040706","#040706","#040706","#040706","#040706",
-    "#040706","#040706","#040706","#040706","#040706","#040706"
-  ];
+  // same image-sampled palettes you approved
+  const palettes = {
+    1: ["#040706","#040706","#040706","#040706","#040706","#040706","#040706","#040706","#040706","#040706","#040706","#040706"],
+    2: ["#767b7b","#b3b5b4","#ebf4f3","#dddfd6","#c9c2b2","#9c8b90","#59535d","#0c1524","#5b3512","#604319","#654f20","#32363a"],
+    3: ["#e28d40","#cb5b2a","#a64f38","#6c1e14","#743d4b","#655a64","#7e6c89","#68799a","#54787a","#426d60","#7d8661","#c99c3c"],
+    4: ["#f6851e","#ed1d26","#dc1c24","#ece811","#ecf09b","#67c7ef","#bcc5e4","#824e9f","#d43795","#ee97c0","#059347","#dceed9"]
+  };
 
-  // ring2 (neutrals)
-  const colors2 = [
-    "#767b7b","#b3b5b4","#ebf4f3","#dddfd6","#c9c2b2","#9c8b90",
-    "#59535d","#0c1524","#5b3512","#604319","#654f20","#32363a"
-  ];
+  // angle overlap to prevent seams
+  const overlapDeg = 0.8;
 
-  // ring3 (muted / "no-color")
-  const colors3 = [
-    "#e28d40","#cb5b2a","#a64f38","#6c1e14","#743d4b","#655a64",
-    "#7e6c89","#68799a","#54787a","#426d60","#7d8661","#c99c3c"
-  ];
-
-  // ring4 (brights / outer)
-  const colors4 = [
-    "#f6851e","#ed1d26","#dc1c24","#ece811","#ecf09b","#67c7ef",
-    "#bcc5e4","#824e9f","#d43795","#ee97c0","#059347","#dceed9"
-  ];
-
-  const palettes = {1:colors1,2:colors2,3:colors3,4:colors4};
-
-  // small angular overlap to avoid seams from antialiasing
-  const overlapDeg = 0.6;
-
-  // create slices
-  for (let ring=4; ring>=1; ring--){
-    const g = document.getElementById('ring'+ring);
+  // Build wedges for each ring, outer -> inner
+  [4,3,2,1].forEach(ring => {
+    const g = document.getElementById('ring' + ring);
     g.dataset.rotation = '0';
     const pal = palettes[ring];
+    const rOut = ringConfig[ring].rOut;
     for (let i=0;i<segments;i++){
-      const segAngle = 360/segments;
-      const start = (i*segAngle) - (overlapDeg/2);
-      const end = ((i+1)*segAngle) + (overlapDeg/2);
+      const seg = 360 / segments;
+      const start = (i*seg) - overlapDeg/2;
+      const end   = ((i+1)*seg) + overlapDeg/2;
       const path = document.createElementNS('http://www.w3.org/2000/svg','path');
       path.classList.add('slice');
-      path.setAttribute('d', sectorPath(cx,cy, ringConfig[ring].rIn, ringConfig[ring].rOut, start, end));
+      path.setAttribute('d', wedgePath(cx,cy, rOut, start, end));
       path.setAttribute('fill', pal[i % pal.length]);
       path.setAttribute('data-index', i);
       path.setAttribute('data-ring', ring);
       path.addEventListener('click', onSliceClick);
       g.appendChild(path);
     }
-  }
+  });
 
-  // geometry helpers
-  function sectorPath(cx,cy,r1,r2,startDeg,endDeg){
-    const start = polarToCartesian(cx,cy,r2,endDeg);
-    const end = polarToCartesian(cx,cy,r2,startDeg);
-    const innerStart = polarToCartesian(cx,cy,r1,startDeg);
-    const innerEnd = polarToCartesian(cx,cy,r1,endDeg);
+  // Build wedge path: center -> outer arc -> center (closed)
+  function wedgePath(cx,cy,rOut,startDeg,endDeg){
+    const start = polarToCartesian(cx,cy,rOut,endDeg);
+    const end   = polarToCartesian(cx,cy,rOut,startDeg);
 
-    // compute sweep
     let sweep = endDeg - startDeg;
     while (sweep < 0) sweep += 360;
     sweep = sweep % 360;
     const largeArc = (sweep > 180) ? 1 : 0;
 
-    if (r1 <= 0.001) {
-      return `M ${cx} ${cy} L ${start.x} ${start.y} A ${r2} ${r2} 0 ${largeArc} 0 ${end.x} ${end.y} Z`;
-    }
-
-    return `M ${start.x} ${start.y} A ${r2} ${r2} 0 ${largeArc} 0 ${end.x} ${end.y} L ${innerEnd.x} ${innerEnd.y} A ${r1} ${r1} 0 ${largeArc} 1 ${innerStart.x} ${innerStart.y} Z`;
+    return `M ${cx} ${cy} L ${start.x} ${start.y} A ${rOut} ${rOut} 0 ${largeArc} 0 ${end.x} ${end.y} Z`;
   }
 
   function polarToCartesian(cx,cy,r,deg){
     const rad = (deg - 90) * Math.PI / 180.0;
-    return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) };
+    return { x: cx + (r * Math.cos(rad)), y: cy + (r * Math.sin(rad)) };
   }
 
-  // Interaction: pointer-based rotation of rings
+  // Interaction: rotate rings (pointer events)
   let active = null;
   const locks = {1:false,2:false,3:false,4:false};
 
@@ -153,8 +124,8 @@ Interactive Tibi wheel — image-matched colors (sampled from user's image)
     return Math.atan2(dy,dx) * 180 / Math.PI;
   }
 
-  function findRingGroupFromTarget(target){
-    return target.closest ? target.closest('g') : null;
+  function findRingGroupFromTarget(t){
+    return t.closest ? t.closest('g') : null;
   }
 
   svg.addEventListener('pointerdown', (evt)=>{
@@ -185,7 +156,7 @@ Interactive Tibi wheel — image-matched colors (sampled from user's image)
     active = null;
   });
 
-  // slice click highlight
+  // highlight across rings on click
   let highlightedIndex = null;
   function onSliceClick(evt){
     evt.stopPropagation();
@@ -207,12 +178,12 @@ Interactive Tibi wheel — image-matched colors (sampled from user's image)
     svg.querySelectorAll('.slice-highlight').forEach(el => el.classList.remove('slice-highlight'));
   }
 
-  // convenience: click background clears highlights
+  // click background clears highlight
   svg.addEventListener('click', (e) => {
     if (e.target === svg) { clearHighlights(); highlightedIndex = null; }
   });
 
-  // keyboard nudges (1-4 rotate the corresponding ring by +30°)
+  // keyboard nudges
   window.addEventListener('keydown', (e)=>{
     if (e.key >= '1' && e.key <= '4') {
       const r = parseInt(e.key,10);
@@ -223,7 +194,7 @@ Interactive Tibi wheel — image-matched colors (sampled from user's image)
     }
   });
 
-  // Expose small API on window for debugging (optional)
+  // expose simple API for debugging / external control
   window.tibiWheel = {
     rotateTo: (ring,deg) => {
       const g = document.getElementById('ring'+ring);
