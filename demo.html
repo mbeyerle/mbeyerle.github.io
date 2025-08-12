@@ -1,1 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Tibi Color Wheel Prototype</title>
+<style>
+  body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: #f8f8f8;
+    height: 100vh;
+    margin: 0;
+  }
+  svg {
+    max-width: 90vw;
+    max-height: 90vh;
+    cursor: grab;
+  }
+  svg:active {
+    cursor: grabbing;
+  }
+</style>
+</head>
+<body>
+
+<svg id="color-wheel" viewBox="0 0 500 500">
+  <!-- Ring 1 -->
+  <g id="ring1">
+    <circle cx="250" cy="250" r="60" fill="none" stroke="#555" stroke-width="50" />
+  </g>
+
+  <!-- Ring 2 -->
+  <g id="ring2">
+    <circle cx="250" cy="250" r="120" fill="none" stroke="#f66" stroke-width="50" />
+  </g>
+
+  <!-- Ring 3 -->
+  <g id="ring3">
+    <circle cx="250" cy="250" r="180" fill="none" stroke="#6f6" stroke-width="50" />
+  </g>
+
+  <!-- Ring 4 -->
+  <g id="ring4">
+    <circle cx="250" cy="250" r="240" fill="none" stroke="#66f" stroke-width="50" />
+  </g>
+</svg>
+
+<script>
+(function() {
+  const svg = document.getElementById("color-wheel");
+  const rings = ["ring1", "ring2", "ring3", "ring4"].map(id => document.getElementById(id));
+
+  let activeRing = null;
+  let startAngle = 0;
+  let currentRotation = new Map(rings.map(r => [r.id, 0]));
+
+  function getAngle(evt) {
+    const pt = svg.createSVGPoint();
+    pt.x = evt.clientX;
+    pt.y = evt.clientY;
+    const cursor = pt.matrixTransform(svg.getScreenCTM().inverse());
+    const dx = cursor.x - 250;
+    const dy = cursor.y - 250;
+    return Math.atan2(dy, dx) * (180 / Math.PI);
+  }
+
+  svg.addEventListener("mousedown", evt => {
+    if (evt.target.closest("g")) {
+      activeRing = evt.target.closest("g");
+      startAngle = getAngle(evt) - currentRotation.get(activeRing.id);
+    }
+  });
+
+  svg.addEventListener("mousemove", evt => {
+    if (activeRing) {
+      const angle = getAngle(evt) - startAngle;
+      currentRotation.set(activeRing.id, angle);
+      activeRing.setAttribute("transform", `rotate(${angle} 250 250)`);
+    }
+  });
+
+  svg.addEventListener("mouseup", () => {
+    activeRing = null;
+  });
+
+  svg.addEventListener("mouseleave", () => {
+    activeRing = null;
+  });
+
+  // For touch devices
+  svg.addEventListener("touchstart", evt => {
+    const touch = evt.touches[0];
+    const targetRing = document.elementFromPoint(touch.clientX, touch.clientY)?.closest("g");
+    if (targetRing) {
+      activeRing = targetRing;
+      startAngle = getAngle(touch) - currentRotation.get(activeRing.id);
+    }
+  });
+
+  svg.addEventListener("touchmove", evt => {
+    if (activeRing) {
+      const touch = evt.touches[0];
+      const angle = getAngle(touch) - startAngle;
+      currentRotation.set(activeRing.id, angle);
+      activeRing.setAttribute("transform", `rotate(${angle} 250 250)`);
+    }
+  });
+
+  svg.addEventListener("touchend", () => {
+    activeRing = null;
+  });
+
+})();
+</script>
+
+</body>
+</html>
 
