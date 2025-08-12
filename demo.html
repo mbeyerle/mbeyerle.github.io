@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Tibi Color Wheel — Demo</title>
+<title>Tibi Color Wheel — Demo (no gaps)</title>
 <style>
   :root{
     --size: 720px;
@@ -28,13 +28,14 @@
   .chip{display:flex;gap:8px;align-items:center;padding:4px 6px;border-radius:6px;border:1px solid #eee;background:#fff}
   .chip .sw{width:18px;height:18px;border-radius:3px;border:1px solid #ddd}
   .hint{margin-top:10px;font-size:13px;color:var(--muted)}
-  /* highlight style for selected slices */
-  .slice-highlight { filter: drop-shadow(0 2px 6px rgba(0,0,0,.12)); stroke:#fff; stroke-width:2px; }
+  /* improved precision; remove stroke so no white lines */
+  .slice { stroke: none; shape-rendering: geometricPrecision; vector-effect: non-scaling-stroke; }
+  .slice-highlight { filter: drop-shadow(0 2px 6px rgba(0,0,0,.12)); stroke:#ffffffcc; stroke-width:3; }
 </style>
 </head>
 <body>
   <div class="wrap">
-    <h1>Tibi Color Wheel — Interactive Demo</h1>
+    <h1>Tibi Color Wheel — Interactive Demo (no gaps)</h1>
     <div class="canvas-wrap">
       <svg id="wheel" viewBox="0 0 600 600" width="600" height="600" aria-label="Tibi Color Wheel">
         <defs>
@@ -106,74 +107,58 @@
   </div>
 
 <script>
-/*
-Tibi Color Wheel — interactive segmented wheel
-- 12 segments
-- 4 rings (1..4)
-- Each ring can be rotated independently by dragging
-- Click a slice to highlight corresponding slices (same index) across all rings
-- Lock/reset/snap controls included
-
-Precise hex colors are approximations of Tibi's official palette (visual sampling).
-Official Tibi color wheel reference: https://tibi.com/pages/the-color-wheel
-*/
-
 (function(){
   const svg = document.getElementById('wheel');
   const cx = 300, cy = 300;
   const segments = 12;
+
   // radii for rings [innerRadius, outerRadius] from center (ring1 is innermost)
   const ringConfig = {
-    1: {rIn: 0, rOut: 60},
+    1: {rIn: 4, rOut: 60},    // small inner radius to avoid a pixel center gap
     2: {rIn: 70, rOut: 140},
     3: {rIn: 150, rOut: 240},
     4: {rIn: 250, rOut: 300}
   };
 
-  // Approximate color palettes (12 entries each) visually matched to Tibi wheel.
-  // If you want exact hexes, I can sample the official image and replace these.
+  // Approximate color palettes
   const colors = {
-    1: [ // Ring 1: anchors / blacks / deep neutrals
-      '#0A0A0A','#121212','#1A1A1A','#202024','#2B2B2B','#1C1B1A',
-      '#151417','#0C0C0C','#070707','#161616','#1B1B1B','#111111'
-    ],
-    2: [ // Ring 2: neutrals (whites, creams, sands, camel, grey)
-      '#FFFFFF','#F8F3EC','#EFE6D8','#E6D8C3','#D2B89B','#C4AA8D',
-      '#BFB7B0','#A9A6A2','#8F8A82','#7A7974','#6A6A66','#4F4F4F'
-    ],
-    3: [ // Ring 3: "no-color" / muted tones
-      '#D8C7C9','#C8B9C2','#BFB2C3','#B6B0C2','#9E9FB1','#9AA4A2',
-      '#9CBBAA','#A7C6B0','#C7D9C8','#D8E3DA','#E6D6D7','#D6CFCF'
-    ],
-    4: [ // Ring 4: bright / bold colors
-      '#E23E3E','#FF9F1C','#FFD166','#FFED66','#B6E86A','#58C68B',
-      '#34B1C9','#4B8BFF','#8456E0','#FF6FB1','#FF8DAA','#FF3E6B'
-    ]
+    1: ['#0A0A0A','#121212','#1A1A1A','#202024','#2B2B2B','#1C1B1A','#151417','#0C0C0C','#070707','#161616','#1B1B1B','#111111'],
+    2: ['#FFFFFF','#F8F3EC','#EFE6D8','#E6D8C3','#D2B89B','#C4AA8D','#BFB7B0','#A9A6A2','#8F8A82','#7A7974','#6A6A66','#4F4F4F'],
+    3: ['#D8C7C9','#C8B9C2','#BFB2C3','#B6B0C2','#9E9FB1','#9AA4A2','#9CBBAA','#A7C6B0','#C7D9C8','#D8E3DA','#E6D6D7','#D6CFCF'],
+    4: ['#E23E3E','#FF9F1C','#FFD166','#FFED66','#B6E86A','#58C68B','#34B1C9','#4B8BFF','#8456E0','#FF6FB1','#FF8DAA','#FF3E6B']
   };
 
-  // Create rings and slices
+  // tiny overlap angle in degrees to prevent seams caused by anti-aliasing
+  const overlapDeg = 0.6; // increase slightly if seams still show on some displays
+
+  // Build slices
   for (let ring = 4; ring >= 1; ring--) {
     const g = document.getElementById('ring' + ring);
     g.setAttribute('transform', 'rotate(0 ' + cx + ' ' + cy + ')');
     g.dataset.rotation = '0';
+
     const pal = colors[ring];
     for (let i = 0; i < segments; i++) {
-      const startAngle = (i / segments) * 360;
-      const endAngle = ((i+1) / segments) * 360;
+      // expand each slice by half overlap on both ends
+      const segmentAngle = 360 / segments;
+      const startAngle = (i * segmentAngle) - (overlapDeg/2);
+      const endAngle = ((i+1) * segmentAngle) + (overlapDeg/2);
+
       const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+      path.classList.add('slice');
       const d = sectorPath(cx,cy, ringConfig[ring].rIn, ringConfig[ring].rOut, startAngle, endAngle);
       path.setAttribute('d', d);
       path.setAttribute('fill', pal[i % pal.length]);
       path.setAttribute('data-index', i);
       path.setAttribute('data-ring', ring);
+      path.setAttribute('stroke', 'none');
       path.style.cursor = 'pointer';
-      path.style.transition = 'transform .08s';
       path.addEventListener('click', onSliceClick);
       g.appendChild(path);
     }
   }
 
-  // Add legend chips (first 6 of ring4 as sample)
+  // Legend (sample)
   const legend = document.getElementById('legend');
   for (let i=0;i<6;i++){
     const chip = document.createElement('div'); chip.className='chip';
@@ -183,17 +168,20 @@ Official Tibi color wheel reference: https://tibi.com/pages/the-color-wheel
   }
 
   function sectorPath(cx,cy, r1, r2, startDeg, endDeg){
-    // returns an SVG path that draws a ring-sector from startDeg to endDeg (degrees),
-    // outer arc from start->end, inner arc from end->start (clockwise)
+    // returns path for outer arc start->end, inner arc end->start
     const start = polarToCartesian(cx,cy,r2,endDeg);
     const end = polarToCartesian(cx,cy,r2,startDeg);
     const innerStart = polarToCartesian(cx,cy,r1,startDeg);
     const innerEnd = polarToCartesian(cx,cy,r1,endDeg);
 
-    const largeArc = (endDeg - startDeg) % 360 > 180 ? 1 : 0;
+    // make sure we use correct large-arc flag
+    let sweep = (endDeg - startDeg);
+    while (sweep < 0) sweep += 360;
+    while (sweep >= 360) sweep -= 360;
+    const largeArc = sweep > 180 ? 1 : 0;
 
-    // If r1 == 0, draw wedge (triangle-like)
     if (r1 <= 0.001) {
+      // wedge from center (not used here because we set r1 small)
       return [
         `M ${cx} ${cy}`,
         `L ${start.x} ${start.y}`,
@@ -216,9 +204,8 @@ Official Tibi color wheel reference: https://tibi.com/pages/the-color-wheel
     return { x: cx + (r * Math.cos(rad)), y: cy + (r * Math.sin(rad)) };
   }
 
-  // Dragging/rotation logic
-  let active = null; // {ringEl, startAngle, startRotation}
-  const ringEls = [1,2,3,4].map(n => document.getElementById('ring'+n));
+  // Interaction (pointer events)
+  let active = null; // {ringEl, startAngle, startRotation, pointerId}
   const locks = {1:false,2:false,3:false,4:false};
 
   function getPointerAngle(evt){
@@ -230,18 +217,17 @@ Official Tibi color wheel reference: https://tibi.com/pages/the-color-wheel
     return Math.atan2(dy,dx) * 180 / Math.PI;
   }
 
-  // Find ring group from event target (closest g)
   function ringFromEventTarget(target){
     return target.closest ? target.closest('g') : null;
   }
 
   svg.addEventListener('pointerdown', function(evt){
-    if (evt.button !== undefined && evt.button !== 0) return; // only left
+    if (evt.button !== undefined && evt.button !== 0) return;
     const g = ringFromEventTarget(evt.target);
     if (!g) return;
     const ringNum = parseInt(g.dataset.ring,10);
     if (locks[ringNum]) return;
-    svg.setPointerCapture(evt.pointerId);
+    svg.setPointerCapture && svg.setPointerCapture(evt.pointerId);
     active = { ringEl: g, startAngle: getPointerAngle(evt), startRotation: parseFloat(g.dataset.rotation) || 0, pointerId: evt.pointerId };
     evt.preventDefault();
   });
@@ -250,7 +236,6 @@ Official Tibi color wheel reference: https://tibi.com/pages/the-color-wheel
     if (!active || active.pointerId !== evt.pointerId) return;
     const angleNow = getPointerAngle(evt);
     let delta = angleNow - active.startAngle;
-    // Normalize delta to avoid big jumps
     if (delta > 180) delta -= 360;
     if (delta < -180) delta += 360;
     const newRot = active.startRotation + delta;
@@ -264,24 +249,16 @@ Official Tibi color wheel reference: https://tibi.com/pages/the-color-wheel
     active = null;
   });
 
-  // touch fallback handled by pointer events above
-
-  // Slice click -> highlight matching slices across rings (same index)
+  // clicking a slice highlights same-index slices across rings
   let highlightedIndex = null;
   function onSliceClick(evt){
     evt.stopPropagation();
     const idx = parseInt(evt.currentTarget.dataset.index,10);
-    if (highlightedIndex === idx) {
-      clearHighlights();
-      highlightedIndex = null;
-    } else {
-      highlightedIndex = idx;
-      applyHighlights(idx);
-    }
+    if (highlightedIndex === idx) { clearHighlights(); highlightedIndex = null; }
+    else { highlightedIndex = idx; applyHighlights(idx); }
   }
 
   function applyHighlights(idx){
-    // remove previous
     clearHighlights();
     for (let r=1;r<=4;r++){
       const g = document.getElementById('ring'+r);
@@ -294,7 +271,7 @@ Official Tibi color wheel reference: https://tibi.com/pages/the-color-wheel
     svg.querySelectorAll('.slice-highlight').forEach(el => el.classList.remove('slice-highlight'));
   }
 
-  // buttons: lock & reset
+  // controls
   document.querySelectorAll('.lockBtn').forEach(btn=>{
     btn.addEventListener('click',(e)=>{
       const r = parseInt(btn.dataset.ring,10);
@@ -318,7 +295,6 @@ Official Tibi color wheel reference: https://tibi.com/pages/the-color-wheel
   });
 
   document.getElementById('snap').addEventListener('click', ()=> {
-    // snap each ring to nearest 30 degrees (12 segments -> 30°)
     for (let r=1;r<=4;r++){
       const g = document.getElementById('ring'+r);
       const cur = parseFloat(g.dataset.rotation) || 0;
@@ -333,19 +309,16 @@ Official Tibi color wheel reference: https://tibi.com/pages/the-color-wheel
     g.setAttribute('transform', `rotate(${angle} ${cx} ${cy})`);
   }
 
-  // click on empty area clears highlight
   svg.addEventListener('click', (e)=> {
     if (e.target === svg) { clearHighlights(); highlightedIndex = null; }
   });
 
-  // optional: keyboard to nudge selected ring (not required)
   window.addEventListener('keydown', (e)=>{
-    // use number keys 1-4 to select a ring for nudge
     if (e.key >= '1' && e.key <= '4') {
       const r = parseInt(e.key,10);
       const g = document.getElementById('ring'+r);
       const cur = parseFloat(g.dataset.rotation) || 0;
-      rotateTo(r, cur + 30); // nudge 30°
+      rotateTo(r, cur + 30);
     }
   });
 
