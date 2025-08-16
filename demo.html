@@ -2,123 +2,97 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Tibi Color Wheel</title>
+  <title>Tibi Color Wheel (08/15 2244)</title>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
   <style>
     body {
+      background: black;
       display: flex;
-      justify-content: center;
       align-items: center;
+      justify-content: center;
       height: 100vh;
-      background: black;
+      margin: 0;
     }
-    canvas {
-      background: black;
+    svg {
       cursor: grab;
     }
-    canvas:active {
+    svg:active {
       cursor: grabbing;
     }
   </style>
 </head>
 <body>
-  <canvas id="wheel" width="800" height="800"></canvas>
+  <svg id="wheel" width="800" height="800"></svg>
 
   <script>
-    const canvas = document.getElementById("wheel");
-    const ctx = canvas.getContext("2d");
-    const cx = canvas.width / 2;
-    const cy = canvas.height / 2;
+    const width = 800, height = 800;
+    const svg = d3.select("#wheel")
+      .attr("viewBox", [-width/2, -height/2, width, height]);
 
-    // Define Tibi color rings from your reference image
-    // (sampled approximate hex codes — we can refine if needed)
+    // Define rings with exact colors
     const rings = [
-      { // RING 1 (center, 6 sectors)
-        radius: 100,
-        colors: ["#1b1b1b","#6f6368","#b8ada1","#e7ebea","#c7c7c5","#57443b"]
+      {
+        radius: [0, 100], // inner to outer radius
+        colors: ["#000000","#32373b","#ebf3f3","#9c8b90","#c9c3b2","#5b3511"]
       },
-      { // RING 2 (6 sectors)
-        radius: 160,
-        colors: ["#111823","#432e1a","#50524e","#5f5e5c","#784539","#8d3123"]
+      {
+        radius: [100, 180],
+        colors: ["#654f1f","#0c1424","#7e6b88","#59424e","#a65038","#cb5a29"]
       },
-      { // RING 3 (10 sectors)
-        radius: 230,
-        colors: ["#1d2c41","#5b4a6d","#688a95","#38594e","#556b4e",
-                 "#8f7842","#c88d4e","#e2913f","#cf6443","#8f4747"]
+      {
+        radius: [180, 260],
+        colors: ["#7d8560","#416d60","#53787a","#687a9b","#79a5af","#655965"]
       },
-      { // RING 4 (16 sectors)
-        radius: 300,
-        colors: ["#44558c","#6f7faa","#97b0c0","#91729a","#b38ab7",
-                 "#db83aa","#f09db2","#f7d577","#f8f140","#d8a628",
-                 "#ff3300","#ff6f40","#ff964f","#98e7aa","#42b260","#198f47"]
+      {
+        radius: [260, 380],
+        colors: [
+          "#3b59a8","#bdc5e4","#824e9f","#bc93c4","#67c6ef","#03a0dc",
+          "#daedda","#74c480","#059247","#e09960","#faab66","#e28125",
+          "#f6851f","#ed1c24","#da1c23","#8d382e","#743e4b","#6c1e14"
+        ]
       }
     ];
 
-    // Track rotation per ring
-    const rotations = rings.map(() => 0);
+    // Function to draw each ring
+    rings.forEach(ring => {
+      const arc = d3.arc()
+        .innerRadius(ring.radius[0])
+        .outerRadius(ring.radius[1]);
 
-    function drawWheel() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const pie = d3.pie().value(1)(ring.colors);
 
-      rings.forEach((ring, i) => {
-        const n = ring.colors.length;
-        const angleStep = (2 * Math.PI) / n;
-        const innerRadius = i === 0 ? 0 : rings[i - 1].radius;
-        const outerRadius = ring.radius;
+      const g = svg.append("g")
+        .attr("class", "ring")
+        .call(d3.drag()
+          .on("start", dragstarted)
+          .on("drag", dragged));
 
-        for (let j = 0; j < n; j++) {
-          const startAngle = rotations[i] + j * angleStep;
-          const endAngle = startAngle + angleStep;
-
-          ctx.beginPath();
-          ctx.moveTo(cx, cy);
-          ctx.arc(cx, cy, outerRadius, startAngle, endAngle);
-          ctx.closePath();
-          ctx.fillStyle = ring.colors[j];
-          ctx.fill();
-        }
-      });
-
-      // Center label
-      ctx.fillStyle = "white";
-      ctx.font = "20px sans-serif";
-      ctx.textAlign = "center";
-      ctx.fillText("Tibi", cx, cy + 6);
-    }
-
-    drawWheel();
-
-    // Dragging logic
-    let isDragging = false;
-    let activeRing = null;
-    let lastAngle = 0;
-
-    function getAngle(x, y) {
-      return Math.atan2(y - cy, x - cx);
-    }
-
-    canvas.addEventListener("mousedown", e => {
-      const dx = e.offsetX - cx;
-      const dy = e.offsetY - cy;
-      const r = Math.sqrt(dx * dx + dy * dy);
-
-      activeRing = rings.findIndex(ring => r <= ring.radius && r > (rings[rings.indexOf(ring)-1]?.radius || 0));
-      if (activeRing !== -1) {
-        isDragging = true;
-        lastAngle = getAngle(e.offsetX, e.offsetY);
-      }
+      g.selectAll("path")
+        .data(pie)
+        .join("path")
+        .attr("d", arc)
+        .attr("fill", d => d.data)
+        .attr("stroke", "black")
+        .attr("stroke-width", 1);
     });
 
-    canvas.addEventListener("mousemove", e => {
-      if (!isDragging) return;
-      const angle = getAngle(e.offsetX, e.offsetY);
-      const delta = angle - lastAngle;
-      rotations[activeRing] += delta;
-      lastAngle = angle;
-      drawWheel();
-    });
+    // Drag behavior for rotating rings
+    function dragstarted(event) {
+      d3.select(this).raise();
+      this._lastAngle = Math.atan2(event.y, event.x);
+    }
 
-    canvas.addEventListener("mouseup", () => isDragging = false);
-    canvas.addEventListener("mouseleave", () => isDragging = false);
+    function dragged(event) {
+      const angle = Math.atan2(event.y, event.x);
+      const delta = angle - this._lastAngle;
+      this._lastAngle = angle;
+
+      let current = this._rotation || 0;
+      current += delta * (180/Math.PI);
+      this._rotation = current;
+
+      d3.select(this).attr("transform", `rotate(${current})`);
+    }
   </script>
 </body>
 </html>
