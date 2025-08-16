@@ -1,318 +1,159 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
+  <meta charset="UTF-8">
   <title>Tibi Color Wheel (08/15 2244)</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <script src="https://d3js.org/d3.v7.min.js"></script>
   <style>
-    :root{
-      --bg:#000;
-      --label:#ffffffcc;
+    body {
+      background: black;
+      color: white;
+      font-family: sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
     }
-    html,body{height:100%;margin:0;background:var(--bg);font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;}
-    .wrap{height:100%;display:flex;align-items:center;justify-content:center;padding:20px}
-    svg{display:block; max-width:94vmin; height:auto; touch-action: none; user-select:none; -webkit-user-select:none;}
-    .labelText{fill:#fff; font-size:14px; font-weight:600; font-family:Inter,system-ui, sans-serif;}
-    .leader{stroke:#ffffffcc; stroke-width:2; stroke-linecap:round; opacity:0.9;}
-    .ringLabelBox{fill:none}
-    .centerText{fill:#fff; font-family:"Libre Baskerville", Georgia, serif; font-weight:700; font-size:20px; letter-spacing:2px}
-    .slice{stroke:none; shape-rendering:geometricPrecision;}
-    .slice-highlight{filter:drop-shadow(0 6px 16px rgba(0,0,0,.6)); stroke:#ffffffcc; stroke-width:3;}
-    /* subtle cursor hint */
-    .ringGroup{cursor:grab}
-    .ringGroup:active{cursor:grabbing}
+    svg {
+      display: block;
+    }
+    .label {
+      font-size: 14px;
+      fill: white;
+    }
+    .leader {
+      stroke: white;
+      stroke-width: 1px;
+    }
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <!-- SVG center at (0,0) for simpler math -->
-    <svg id="wheel" viewBox="-360 -360 720 720" aria-label="Tibi Color Wheel (interactive)"></svg>
-  </div>
-
+<svg id="wheel" width="800" height="800"></svg>
 <script>
-/* Tibi Color Wheel (08/15 2244)
- - 4 rings total
- - ring1: innermost fully black ring (donut)
- - ring2: sampled colors (6 sectors)
- - ring3: sampled colors (6 sectors)
- - ring4: sampled colors (18 sectors)
- - labels OFF the wheel above it with leader lines pointing to ring midpoints (north)
- - each ring draggable independently (pointer/mouse/touch)
-*/
+// === CONFIG ===
+const width = 800, height = 800;
+const svg = d3.select("#wheel")
+    .attr("width", width)
+    .attr("height", height);
+const g = svg.append("g")
+    .attr("transform", `translate(${width/2},${height/2})`);
 
-// --- configuration (sampled hexes from your image) ---
-const svg = d3.select("#wheel");
-const cx = 0, cy = 0;
+const radii = [50, 130, 230, 300]; // inner/outer radii for rings
+const thicknesses = [50, 80, 100, 70]; // Ring 4 thinner
 
-// measured radii (outer radius for each ring) chosen to match the reference scale
-const radii = {
-  centerDisk: 48,    // black center disk radius
-  ring1Outer: 60,    // ring1 (fully black) outer radius
-  ring2Outer: 167,
-  ring3Outer: 257,
-  ring4Outer: 300
-};
+// === COLORS (sampled from your reference image) ===
+// Ring 1: solid black
+const ring1Colors = ["#000000"];
 
-// ring definitions (inner radius will be previous ring outer)
-const ringDefs = [
-  { // Ring 1 (innermost) - fully black donut
-    id: 1,
-    inner: radii.centerDisk,
-    outer: radii.ring1Outer,
-    colors: ["#000000"] // solid black
-  },
-  { // Ring 2
-    id: 2,
-    inner: radii.ring1Outer,
-    outer: radii.ring2Outer,
-    colors: ["#654f1f","#0c1424","#7e6b88","#59424e","#a65038","#cb5a29"]  // 6 sectors
-  },
-  { // Ring 3
-    id: 3,
-    inner: radii.ring2Outer,
-    outer: radii.ring3Outer,
-    colors: ["#7d8560","#416d60","#53787a","#687a9b","#79a5af","#655965"]  // 6 sectors
-  },
-  { // Ring 4 (outermost)
-    id: 4,
-    inner: radii.ring3Outer,
-    outer: radii.ring4Outer,
-    colors: [
-      "#3b59a8","#bdc5e4","#824e9f","#bc93c4","#67c6ef","#03a0dc",
-      "#daedda","#74c480","#059247","#e09960","#faab66","#e28125",
-      "#f6851f","#ed1c24","#da1c23","#8d382e","#743e4b","#6c1e14"
-    ] // 18 sectors
-  }
+// Ring 2: 8 colors
+const ring2Colors = [
+  "#0C111C","#756364","#B5ABA7","#A0696E",
+  "#802E1E","#746D66","#434343","#6A4A22"
 ];
 
-// small overlap degrees to prevent seams (we are drawing wedges so this is optional but okay)
-const overlapDeg = 0.6;
+// Ring 3: 17 colors
+const ring3Colors = [
+  "#537981","#76907E","#8E8C68","#A9894C","#D89E56",
+  "#E9B589","#F7CE97","#FCE3B7","#FFECCA","#F6F1E2",
+  "#CBD9C2","#9CC7AC","#5E9D82","#3B7C63","#356159",
+  "#2F4440","#2E3835"
+];
 
-// --- Build rings as groups (outer to inner so inner visually sits on top) ---
-const ringGroups = svg.selectAll(".ringGroup")
-  .data(ringDefs)
-  .enter()
-  .append("g")
-    .attr("class","ringGroup")
-    .attr("data-ring", d => d.id)
-    .attr("transform", "rotate(0)"); // rotation will be stored in data-rotation attribute
+// Ring 4: 19 colors
+const ring4Colors = [
+  "#E68396","#FFD749","#FEF066","#65C3DD","#5DA1E2",
+  "#5165B0","#8E6B8C","#C28896","#D39F91","#E9BFA0",
+  "#FBC89A","#FFB65C","#FF9842","#FF6940","#F1413E",
+  "#CB3746","#9F3454","#813E5C","#664E67"
+];
 
-// draw wedges (for ring1 we will draw a full donut since only one color)
-ringGroups.each(function(d){
-  const g = d3.select(this);
-  const colors = d.colors;
-  const n = colors.length;
-  // if only one color and it's ring1, draw a donut ring (full circle)
-  if (n === 1) {
-    // draw a donut ring by drawing two arcs: we can use <path> with SVG arc
-    const rOut = d.outer;
-    const rIn = d.inner;
-    // create ring path from outer arc and inner arc (clockwise/anticlockwise)
-    const path = donutPath(rIn, rOut, 0, 360);
-    g.append("path")
-      .attr("d", path)
-      .attr("fill", colors[0])
-      .attr("class","slice");
-    return;
-  }
+const rings = [
+  { colors: ring1Colors, inner: 0, outer: radii[0] },
+  { colors: ring2Colors, inner: radii[0], outer: radii[1] },
+  { colors: ring3Colors, inner: radii[1], outer: radii[2] },
+  { colors: ring4Colors, inner: radii[2], outer: radii[3] }
+];
 
-  // otherwise create pie wedges
-  const angleStep = 360 / n;
-  for (let i=0;i<n;i++){
-    const start = (i * angleStep) - (overlapDeg/2);
-    const end = ((i+1) * angleStep) + (overlapDeg/2);
-    const dpath = wedgePath(d.inner, d.outer, start, end);
-    g.append("path")
-      .attr("d", dpath)
-      .attr("fill", colors[i % colors.length])
-      .attr("data-index", i)
-      .attr("class", "slice")
-      .on("click", (ev, nodeData) => { ev.stopPropagation(); highlightIndex(i); });
-  }
+// === DRAW RINGS ===
+rings.forEach((ring, idx) => {
+  const arc = d3.arc()
+      .innerRadius(ring.inner)
+      .outerRadius(ring.outer);
+
+  const group = g.append("g")
+      .attr("class", `ring ring-${idx+1}`);
+
+  const pie = d3.pie().value(1)(ring.colors);
+
+  group.selectAll("path")
+    .data(pie)
+    .join("path")
+      .attr("d", arc)
+      .attr("fill", d => d.data)
+      .attr("stroke", "black")
+      .attr("stroke-width", 0.5);
+
+  // drag rotation
+  let currentAngle = 0;
+  const drag = d3.drag()
+    .on("drag", (event) => {
+      const dx = event.x - width/2;
+      const dy = event.y - height/2;
+      const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+      const delta = angle - currentAngle;
+      group.attr("transform", `rotate(${delta})`);
+      group.attr("data-angle", delta);
+    })
+    .on("start", (event) => {
+      const dx = event.x - width/2;
+      const dy = event.y - height/2;
+      currentAngle = Math.atan2(dy, dx) * 180 / Math.PI;
+    });
+  group.call(drag);
 });
 
-// --- center disk & label ---
-svg.append("circle")
-  .attr("cx", cx)
-  .attr("cy", cy)
-  .attr("r", radii.centerDisk)
-  .attr("fill", "#000"); // center disk is black
+// === LABELS + LEADER LINES (right side, stacked) ===
+const labelData = [
+  { text: "Ring 4", ringIdx: 3, yOffset: -60 },
+  { text: "Ring 3", ringIdx: 2, yOffset: -20 },
+  { text: "Ring 2", ringIdx: 1, yOffset: 20 },
+  { text: "Ring 1", ringIdx: 0, yOffset: 60 }
+];
 
-svg.append("text")
-  .attr("class","centerText")
-  .attr("x", cx)
-  .attr("y", cy + 6)
-  .attr("text-anchor","middle")
-  .text("T i b i");
+labelData.forEach(ld => {
+  const ring = rings[ld.ringIdx];
+  const xStart = ring.outer * Math.cos(0);
+  const yStart = ring.outer * Math.sin(0);
+  const xEnd = width/2 + ring.outer + 100;
+  const yEnd = height/2 + ld.yOffset;
 
-// --- leader labels above wheel (north) ---
-// For each ring, compute the top (north) midpoint and draw a leader line up to a stacked label position.
-// We'll place labels above the wheel, stacked with small spacing so they read from center outward as requested:
-// "going up from the center label each ring going up from the center from 1 to 2 to 3 to 4."
-const labelX = 0; // center x for leader base (we draw leaders vertically above)
-const labelRightX = 0; // we will center labels over the wheel horizontally (user asked "off the wheel" above)
-const labelBaseY = - (radii.ring4Outer + 18); // start above outer ring
-const labelSpacing = 22;
+  svg.append("line")
+    .attr("class", "leader")
+    .attr("x1", width/2 + xStart)
+    .attr("y1", height/2 + yStart)
+    .attr("x2", xEnd - 30)
+    .attr("y2", yEnd);
 
-// label order: ring1 closest to center so it should be lowest label; ring4 highest
-// We'll compute each ring's top point (angle = -90 deg), then draw a short leader to the labelY.
-ringDefs.forEach((rd, idx) => {
-  const ringIndex = rd.id;
-  // midpoint radius:
-  const midR = (rd.inner + rd.outer) / 2;
-  const topPoint = polarToCartesian(midR, -90); // {x,y}
-  // label Y - we want ascending: ring1 near center -> lowest label. So compute offset by (ringIndex - 1)
-  const labelY = labelBaseY + ( (ringIndex - 4) * labelSpacing ); // ring4 most negative (higher), ring1 closest to center (less negative)
-  // draw leader line from topPoint up to an intermediate point just above ring, then further to label
-  const leaderGroup = svg.append("g").attr("class","leaderGroup");
-  // short vertical line from topPoint to topPoint.y - 10
-  leaderGroup.append("line")
-    .attr("x1", topPoint.x)
-    .attr("y1", topPoint.y)
-    .attr("x2", topPoint.x)
-    .attr("y2", labelY + 6) // connect to label baseline
-    .attr("class","leader")
-    .attr("stroke-linejoin","round");
-  // small circular marker at ring pointing point
-  leaderGroup.append("circle")
-    .attr("cx", topPoint.x)
-    .attr("cy", topPoint.y)
-    .attr("r", 3)
-    .attr("fill","#ffffffdd");
-
-  // label text (placed centered above)
-  leaderGroup.append("text")
-    .attr("x", topPoint.x + 18) // offset right a bit so it's clearly outside the wheel
-    .attr("y", labelY + 6)
-    .attr("alignment-baseline","middle")
-    .attr("class","labelText")
-    .text("RING " + ringIndex);
+  svg.append("text")
+    .attr("class", "label")
+    .attr("x", xEnd)
+    .attr("y", yEnd)
+    .attr("dominant-baseline", "middle")
+    .text(ld.text);
 });
 
-// --- dragging behavior (rotate each ring independently) ---
-// We'll use d3.drag but compute pointer angles against the SVG coordinate system.
-const groups = svg.selectAll(".ringGroup").nodes();
+// === Center label ===
+g.append("circle")
+  .attr("r", radii[0]/2)
+  .attr("fill", "black");
+g.append("text")
+  .attr("fill", "white")
+  .attr("text-anchor", "middle")
+  .attr("dominant-baseline", "middle")
+  .style("font-size", "20px")
+  .text("Tibi");
 
-// helper to get angle (degrees) from client coords relative to SVG center
-function getAngleFromClient(evt) {
-  // evt is a PointerEvent (with clientX, clientY)
-  const pt = svg.node().createSVGPoint();
-  pt.x = evt.clientX;
-  pt.y = evt.clientY;
-  const loc = pt.matrixTransform(svg.node().getScreenCTM().inverse());
-  // loc.x, loc.y are in svg coordinates (centered at 0,0)
-  return Math.atan2(loc.y - cy, loc.x - cx) * 180 / Math.PI;
-}
-
-// assign drag to each group
-ringGroups.call(
-  d3.drag()
-    .on("start", function(event, d) {
-      // remember initial rotation & starting angle
-      this._startAngleDeg = getAngleFromClient(event.sourceEvent);
-      // current rotation stored as attribute or 0
-      const cur = this.getAttribute("data-rotation");
-      this._rotation = cur ? parseFloat(cur) : 0;
-    })
-    .on("drag", function(event, d) {
-      const nowDeg = getAngleFromClient(event.sourceEvent);
-      // compute delta (wrap between -180..180)
-      let delta = nowDeg - this._startAngleDeg;
-      if (delta > 180) delta -= 360;
-      if (delta < -180) delta += 360;
-      const newRot = this._rotation + delta;
-      this.setAttribute("data-rotation", newRot);
-      d3.select(this).attr("transform", `rotate(${newRot})`);
-      // update saved rotation in case of continued drag
-      // do not reset _startAngleDeg so delta remains relative to start
-    })
-    .on("end", function(event, d) {
-      // nothing special
-    })
-);
-
-// --- highlight click helper (clicking a wedge highlights matching index across rings) ---
-function highlightIndex(idx) {
-  // clear
-  svg.selectAll(".slice-highlight").classed("slice-highlight", false);
-  // for each ringGroup except ring1 (which is solid black), find path[data-index=idx]
-  ringGroups.forEach(g => {
-    const $g = d3.select(g);
-    const ringId = +$g.attr("data-ring");
-    const target = $g.select('path[data-index="'+idx+'"]');
-    if (!target.empty()) {
-      target.classed("slice-highlight", true);
-    }
-  });
-}
-
-// click background clears highlight
-svg.on("click", function(ev) {
-  // only clear if click on svg root
-  if (ev.target === svg.node()) {
-    svg.selectAll(".slice-highlight").classed("slice-highlight", false);
-  }
-});
-
-// --- helper geometry functions ---
-function polarToCartesian(r, deg) {
-  const rad = (deg - 90) * Math.PI / 180.0;
-  return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) };
-}
-
-function wedgePath(rIn, rOut, startDeg, endDeg) {
-  // compute arc endpoints and return closed path (center -> outerArc -> center)
-  // We'll draw wedge from center out to rOut arc then back to center but leaving inner hole handled by overlay stack
-  // For proper wedge donut (center hollow) we want wedge that starts at center -- but stacking outer rings first keeps inner rings on top.
-  // Instead implement full wedge from center to outer radius. Because inner rings will sit on top it will visually appear as ring wedges.
-  // However better: draw wedge as a ring-wedge when inner>0 (a donut wedge)
-  const startOuter = polarToCartesian(rOut, endDeg);
-  const endOuter = polarToCartesian(rOut, startDeg);
-  if (rIn <= 0.001) {
-    // wedge to center
-    return `M ${cx} ${cy} L ${startOuter.x} ${startOuter.y} A ${rOut} ${rOut} 0 ${((endDeg - startDeg + 360) % 360) > 180 ? 1 : 0} 0 ${endOuter.x} ${endOuter.y} Z`;
-  }
-  const startInner = polarToCartesian(rIn, startDeg);
-  const endInner = polarToCartesian(rIn, endDeg);
-  let sweep = endDeg - startDeg;
-  while (sweep < 0) sweep += 360;
-  sweep = sweep % 360;
-  const largeArc = sweep > 180 ? 1 : 0;
-  // Outer arc start->end (clockwise = 0) then line to inner arc end->start (counterclockwise)
-  return [
-    `M ${startOuter.x} ${startOuter.y}`,
-    `A ${rOut} ${rOut} 0 ${largeArc} 0 ${endOuter.x} ${endOuter.y}`,
-    `L ${endInner.x} ${endInner.y}`,
-    `A ${rIn} ${rIn} 0 ${largeArc} 1 ${startInner.x} ${startInner.y}`,
-    `Z`
-  ].join(" ");
-}
-
-function donutPath(rIn, rOut, startDeg, endDeg) {
-  // full donut (360 degrees): use a ring path (outer circle minus inner circle)
-  // We'll draw a path that goes around outer circle then inner circle reversed
-  // Start at angle 0 on outer, draw full outer arc, then jump to inner end and draw inner full arc reversed
-  const outerStart = polarToCartesian(rOut, 0);
-  const outerEnd = outerStart; // same point
-  const innerStart = polarToCartesian(rIn, 0);
-  let largeArc = 1; // full circle must use two arcs in SVG; however an arc with sweep 360 is represented by two arcs of 180
-  // We'll compose two 180-degree arcs for outer and inner
-  const outerArc1 = [
-    `M ${outerStart.x} ${outerStart.y}`,
-    `A ${rOut} ${rOut} 0 1 0 ${polarToCartesian(rOut,180).x} ${polarToCartesian(rOut,180).y}`,
-    `A ${rOut} ${rOut} 0 1 0 ${outerStart.x} ${outerStart.y}`
-  ].join(' ');
-  const innerArc1 = [
-    `M ${polarToCartesian(rIn,0).x} ${polarToCartesian(rIn,0).y}`,
-    `A ${rIn} ${rIn} 0 1 1 ${polarToCartesian(rIn,180).x} ${polarToCartesian(rIn,180).y}`,
-    `A ${rIn} ${rIn} 0 1 1 ${polarToCartesian(rIn,0).x} ${polarToCartesian(rIn,0).y}`
-  ].join(' ');
-  // Construct combined path that draws outer then inner in opposite direction using even-odd fill-rule
-  return outerArc1 + ' ' + innerArc1;
-}
-
-// done
 </script>
 </body>
 </html>
