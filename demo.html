@@ -1,159 +1,126 @@
-<!DOCTYPE html>
-<html lang="en">
+<!doctype html>
+<html>
 <head>
-  <meta charset="UTF-8">
-  <title>Tibi Color Wheel (08/15 2244)</title>
-  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <meta charset="utf-8" />
+  <title>Reproduced Wheel</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <style>
-    body {
-      background: black;
-      color: white;
-      font-family: sans-serif;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      margin: 0;
-    }
-    svg {
-      display: block;
-    }
-    .label {
-      font-size: 14px;
-      fill: white;
-    }
-    .leader {
-      stroke: white;
-      stroke-width: 1px;
-    }
+    html,body { height:100%; margin:0; background:#000; }
+    .wrap { display:flex; align-items:center; justify-content:center; height:100%; }
+    svg{ max-width:95vmin; max-height:95vmin; display:block; }
+    text.center { font-family: Arial, Helvetica, sans-serif; font-weight:700; }
   </style>
 </head>
 <body>
-<svg id="wheel" width="800" height="800"></svg>
-<script>
-// === CONFIG ===
-const width = 800, height = 800;
-const svg = d3.select("#wheel")
-    .attr("width", width)
-    .attr("height", height);
-const g = svg.append("g")
-    .attr("transform", `translate(${width/2},${height/2})`);
+  <div class="wrap">
+<svg viewBox="0 0 2048 2038" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Reproduced color wheel">
+  <!-- black background -->
+  <rect width="2048" height="2038" fill="#000"/>
 
-const radii = [50, 130, 230, 300]; // inner/outer radii for rings
-const thicknesses = [50, 80, 100, 70]; // Ring 4 thinner
+  <!--
+    The geometry below was derived from the provided PNG.
+    Center coordinates and ring boundaries are set to match the image:
+      center ~ (1023.471, 1018.692)
+      ring boundaries (px) = [0, 28, 73, 116, 139, 777]
+    Angular segmentation uses 17 equal-angle sectors (360/17).
+    Colors were sampled from the image per ring-sector and used as fills.
+  -->
 
-// === COLORS (sampled from your reference image) ===
-// Ring 1: solid black
-const ring1Colors = ["#000000"];
+  <!-- generated wedge sectors for each ring (inner->outer) -->
+  <!-- ring 0: inner 0 -> 28 px -->
+  <path d="M 1023.471 1018.692 L 1051.471 1018.692 A 28 28 0 0 1 1049.580 1028.807 Z" fill="#5c5e5e" stroke="none"/>
+  <path d="M 1023.471 1018.692 L 1049.580 1028.807 A 28 28 0 0 1 1044.163 1037.556 Z" fill="#5d5f5f" stroke="none"/>
+  <path d="M 1023.471 1018.692 L 1044.163 1037.556 A 28 28 0 0 1 1035.951 1043.757 Z" fill="#5b5d5d" stroke="none"/>
+  <path d="M 1023.471 1018.692 L 1035.951 1043.757 A 28 28 0 0 1 1026.054 1046.573 Z" fill="#373939" stroke="none"/>
+  <path d="M 1023.471 1018.692 L 1026.054 1046.573 A 28 28 0 0 1 1015.808 1045.624 Z" fill="#040707" stroke="none"/>
+  <path d="M 1023.471 1018.692 L 1015.808 1045.624 A 28 28 0 0 1 1004.978 1039.860 Z" fill="#090c0c" stroke="none"/>
+  <path d="M 1023.471 1018.692 L 1004.978 1039.860 A 28 28 0 0 1 996.066 1030.671 Z" fill="#525454" stroke="none"/>
+  <path d="M 1023.471 1018.692 L 996.066 1030.671 A 28 28 0 0 1 983.184 1017.150 Z" fill="#67696a" stroke="none"/>
+  <path d="M 1023.471 1018.692 L 983.184 1017.150 A 28 28 0 0 1 974.515 1004.307 Z" fill="#787a7a" stroke="none"/>
+  <path d="M 1023.471 1018.692 L 974.515 1004.307 A 28 28 0 0 1 974.124 993.281 Z" fill="#040707" stroke="none"/>
+  <path d="M 1023.471 1018.692 L 974.124 993.281 A 28 28 0 0 1 978.482 980.779 Z" fill="#040707" stroke="none"/>
+  <path d="M 1023.471 1018.692 L 978.482 980.779 A 28 28 0 0 1 989.643 972.086 Z" fill="#040707" stroke="none"/>
+  <path d="M 1023.471 1018.692 L 989.643 972.086 A 28 28 0 0 1 1002.626 968.025 Z" fill="#373939" stroke="none"/>
+  <path d="M 1023.471 1018.692 L 1002.626 968.025 A 28 28 0 0 1 1018.851 969.294 Z" fill="#454747" stroke="none"/>
+  <path d="M 1023.471 1018.692 L 1018.851 969.294 A 28 28 0 0 1 1036.434 975.981 Z" fill="#1a1d1d" stroke="none"/>
+  <path d="M 1023.471 1018.692 L 1036.434 975.981 A 28 28 0 0 1 1050.304 987.739 Z" fill="#5e6060" stroke="none"/>
 
-// Ring 2: 8 colors
-const ring2Colors = [
-  "#0C111C","#756364","#B5ABA7","#A0696E",
-  "#802E1E","#746D66","#434343","#6A4A22"
-];
+  <!-- ring 1: inner 28 -> 73 px -->
+  <!-- row of 17 wedge paths (colors sampled) -->
+  <path d="M 994.183 1030.875 L 1049.580 1028.807 A 73 73 0 0 1 1035.951 1043.757 L 1015.808 1045.624 A 73 73 0 0 0 994.183 1030.875 Z" fill="#353838" stroke="none"/>
+  <path d="M 1015.808 1045.624 L 1035.951 1043.757 A 73 73 0 0 1 1044.163 1037.556 L 1026.054 1046.573 A 73 73 0 0 0 1015.808 1045.624 Z" fill="#0e1111" stroke="none"/>
+  <path d="M 1026.054 1046.573 L 1044.163 1037.556 A 73 73 0 0 1 1051.471 1018.692 L 1015.808 1045.624 A 73 73 0 0 0 1026.054 1046.573 Z" fill="#040707" stroke="none"/>
+  <path d="M 1051.471 1018.692 L 1044.163 1037.556 A 73 73 0 0 1 1049.580 1028.807 L 1015.808 1045.624 A 73 73 0 0 0 1051.471 1018.692 Z" fill="#040707" stroke="none"/>
+  <path d="M 1049.580 1028.807 L 1035.951 1043.757 A 73 73 0 0 1 1035.951 1043.757 L 1026.054 1046.573 A 73 73 0 0 0 1049.580 1028.807 Z" fill="#040707" stroke="none"/>
+  <path d="M 1035.951 1043.757 L 1026.054 1046.573 A 73 73 0 0 1 1015.808 1045.624 L 1015.808 1045.624 A 73 73 0 0 0 1035.951 1043.757 Z" fill="#040707" stroke="none"/>
+  <path d="M 1026.054 1046.573 L 1015.808 1045.624 A 73 73 0 0 1 1004.978 1039.860 L 1015.808 1045.624 A 73 73 0 0 0 1026.054 1046.573 Z" fill="#040707" stroke="none"/>
+  <path d="M 1015.808 1045.624 L 1004.978 1039.860 A 73 73 0 0 1 996.066 1030.671 L 1015.808 1045.624 A 73 73 0 0 0 1015.808 1045.624 Z" fill="#3d4040" stroke="none"/>
+  <path d="M 1004.978 1039.860 L 996.066 1030.671 A 73 73 0 0 1 983.184 1017.150 L 1004.978 1039.860 A 73 73 0 0 0 1004.978 1039.860 Z" fill="#040707" stroke="none"/>
+  <path d="M 996.066 1030.671 L 983.184 1017.150 A 73 73 0 0 1 974.515 1004.307 L 996.066 1030.671 A 73 73 0 0 0 996.066 1030.671 Z" fill="#040707" stroke="none"/>
+  <path d="M 983.184 1017.150 L 974.515 1004.307 A 73 73 0 0 1 974.124 993.281 L 983.184 1017.150 A 73 73 0 0 0 983.184 1017.150 Z" fill="#040707" stroke="none"/>
+  <path d="M 974.515 1004.307 L 974.124 993.281 A 73 73 0 0 1 978.482 980.779 L 974.515 1004.307 A 73 73 0 0 0 974.515 1004.307 Z" fill="#040707" stroke="none"/>
+  <path d="M 974.124 993.281 L 978.482 980.779 A 73 73 0 0 1 989.643 972.086 L 974.124 993.281 A 73 73 0 0 0 974.124 993.281 Z" fill="#040707" stroke="none"/>
+  <path d="M 978.482 980.779 L 989.643 972.086 A 73 73 0 0 1 1002.626 968.025 L 978.482 980.779 A 73 73 0 0 0 978.482 980.779 Z" fill="#040707" stroke="none"/>
+  <path d="M 989.643 972.086 L 1002.626 968.025 A 73 73 0 0 1 1018.851 969.294 L 989.643 972.086 A 73 73 0 0 0 989.643 972.086 Z" fill="#040707" stroke="none"/>
+  <path d="M 1002.626 968.025 L 1018.851 969.294 A 73 73 0 0 1 1036.434 975.981 L 1002.626 968.025 A 73 73 0 0 0 1002.626 968.025 Z" fill="#131616" stroke="none"/>
 
-// Ring 3: 17 colors
-const ring3Colors = [
-  "#537981","#76907E","#8E8C68","#A9894C","#D89E56",
-  "#E9B589","#F7CE97","#FCE3B7","#FFECCA","#F6F1E2",
-  "#CBD9C2","#9CC7AC","#5E9D82","#3B7C63","#356159",
-  "#2F4440","#2E3835"
-];
+  <!-- ring 2: inner 73 -> 116 px -->
+  <path d="M 941.625 999.356 L 1035.951 1043.757 A 116 116 0 0 1 1049.580 1028.807 L 954.254 984.407 A 116 116 0 0 0 941.625 999.356 Z" fill="#040707" stroke="none"/>
+  <path d="M 954.254 984.407 L 1049.580 1028.807 A 116 116 0 0 1 1044.163 1037.556 L 949.836 993.106 A 116 116 0 0 0 954.254 984.407 Z" fill="#040707" stroke="none"/>
+  <path d="M 949.836 993.106 L 1044.163 1037.556 A 116 116 0 0 1 1051.471 1018.692 L 957.145 974.292 A 116 116 0 0 0 949.836 993.106 Z" fill="#040707" stroke="none"/>
+  <path d="M 957.145 974.292 L 1051.471 1018.692 A 116 116 0 0 1 1044.163 1037.556 L 949.836 993.106 A 116 116 0 0 0 957.145 974.292 Z" fill="#040707" stroke="none"/>
+  <path d="M 949.836 993.106 L 1044.163 1037.556 A 116 116 0 0 1 1035.951 1043.757 L 941.625 999.356 A 116 116 0 0 0 949.836 993.106 Z" fill="#040707" stroke="none"/>
+  <path d="M 941.625 999.356 L 1035.951 1043.757 A 116 116 0 0 1 1026.054 1046.573 L 932.726 1002.173 A 116 116 0 0 0 941.625 999.356 Z" fill="#040707" stroke="none"/>
+  <path d="M 932.726 1002.173 L 1026.054 1046.573 A 116 116 0 0 1 1015.808 1045.624 L 922.480 1001.224 A 116 116 0 0 0 932.726 1002.173 Z" fill="#040707" stroke="none"/>
+  <path d="M 922.480 1001.224 L 1015.808 1045.624 A 116 116 0 0 1 1004.978 1039.860 L 911.650 995.460 A 116 116 0 0 0 922.480 1001.224 Z" fill="#040707" stroke="none"/>
+  <path d="M 911.650 995.460 L 1004.978 1039.860 A 116 116 0 0 1 996.066 1030.671 L 902.738 986.271 A 116 116 0 0 0 911.650 995.460 Z" fill="#040707" stroke="none"/>
+  <path d="M 902.738 986.271 L 996.066 1030.671 A 116 116 0 0 1 983.184 1017.150 L 889.855 972.750 A 116 116 0 0 0 902.738 986.271 Z" fill="#212424" stroke="none"/>
+  <path d="M 889.855 972.750 L 983.184 1017.150 A 116 116 0 0 1 974.515 1004.307 L 881.187 959.907 A 116 116 0 0 0 889.855 972.750 Z" fill="#393b3b" stroke="none"/>
+  <path d="M 881.187 959.907 L 974.515 1004.307 A 116 116 0 0 1 974.124 993.281 L 880.796 948.880 A 116 116 0 0 0 881.187 959.907 Z" fill="#0d1010" stroke="none"/>
+  <path d="M 880.796 948.880 L 974.124 993.281 A 116 116 0 0 1 978.482 980.779 L 885.153 936.378 A 116 116 0 0 0 880.796 948.880 Z" fill="#040707" stroke="none"/>
+  <path d="M 885.153 936.378 L 978.482 980.779 A 116 116 0 0 1 989.643 972.086 L 896.315 927.684 A 116 116 0 0 0 885.153 936.378 Z" fill="#040707" stroke="none"/>
+  <path d="M 896.315 927.684 L 989.643 972.086 A 116 116 0 0 1 1002.626 968.025 L 909.298 923.623 A 116 116 0 0 0 896.315 927.684 Z" fill="#040707" stroke="none"/>
+  <path d="M 909.298 923.623 L 1002.626 968.025 A 116 116 0 0 1 1018.851 969.294 L 925.523 924.894 A 116 116 0 0 0 909.298 923.623 Z" fill="#040707" stroke="none"/>
 
-// Ring 4: 19 colors
-const ring4Colors = [
-  "#E68396","#FFD749","#FEF066","#65C3DD","#5DA1E2",
-  "#5165B0","#8E6B8C","#C28896","#D39F91","#E9BFA0",
-  "#FBC89A","#FFB65C","#FF9842","#FF6940","#F1413E",
-  "#CB3746","#9F3454","#813E5C","#664E67"
-];
+  <!-- ring 3: inner 116 -> 139 px -->
+  <path d="M 874.539 935.154 L 1035.951 1043.757 A 139 139 0 0 1 1049.580 1028.807 L 888.168 920.204 A 139 139 0 0 0 874.539 935.154 Z" fill="#040707" stroke="none"/>
+  <path d="M 888.168 920.204 L 1049.580 1028.807 A 139 139 0 0 1 1044.163 1037.556 L 882.751 928.953 A 139 139 0 0 0 888.168 920.204 Z" fill="#040707" stroke="none"/>
+  <path d="M 882.751 928.953 L 1044.163 1037.556 A 139 139 0 0 1 1051.471 1018.692 L 890.360 910.090 A 139 139 0 0 0 882.751 928.953 Z" fill="#040707" stroke="none"/>
+  <path d="M 890.360 910.090 L 1051.471 1018.692 A 139 139 0 0 1 1044.163 1037.556 L 882.751 928.953 A 139 139 0 0 0 890.360 910.090 Z" fill="#040707" stroke="none"/>
+  <path d="M 882.751 928.953 L 1044.163 1037.556 A 139 139 0 0 1 1035.951 1043.757 L 874.539 935.154 A 139 139 0 0 0 882.751 928.953 Z" fill="#040707" stroke="none"/>
+  <path d="M 874.539 935.154 L 1035.951 1043.757 A 139 139 0 0 1 1026.054 1046.573 L 864.642 938.970 A 139 139 0 0 0 874.539 935.154 Z" fill="#040707" stroke="none"/>
+  <path d="M 864.642 938.970 L 1026.054 1046.573 A 139 139 0 0 1 1015.808 1045.624 L 853.328 934.021 A 139 139 0 0 0 864.642 938.970 Z" fill="#040707" stroke="none"/>
+  <path d="M 853.328 934.021 L 1015.808 1045.624 A 139 139 0 0 1 1004.978 1039.860 L 842.498 928.257 A 139 139 0 0 0 853.328 934.021 Z" fill="#181b1b" stroke="none"/>
+  <path d="M 842.498 928.257 L 1004.978 1039.860 A 139 139 0 0 1 996.066 1030.671 L 834.236 918.861 A 139 139 0 0 0 842.498 928.257 Z" fill="#232626" stroke="none"/>
+  <path d="M 834.236 918.861 L 996.066 1030.671 A 139 139 0 0 1 983.184 1017.150 L 821.354 905.340 A 139 139 0 0 0 834.236 918.861 Z" fill="#191b1b" stroke="none"/>
+  <path d="M 821.354 905.340 L 983.184 1017.150 A 139 139 0 0 1 974.515 1004.307 L 812.685 892.497 A 139 139 0 0 0 821.354 905.340 Z" fill="#040707" stroke="none"/>
+  <path d="M 812.685 892.497 L 974.515 1004.307 A 139 139 0 0 1 974.124 993.281 L 812.294 881.470 A 139 139 0 0 0 812.685 892.497 Z" fill="#040707" stroke="none"/>
+  <path d="M 812.294 881.470 L 974.124 993.281 A 139 139 0 0 1 978.482 980.779 L 816.152 872.069 A 139 139 0 0 0 812.294 881.470 Z" fill="#040707" stroke="none"/>
 
-const rings = [
-  { colors: ring1Colors, inner: 0, outer: radii[0] },
-  { colors: ring2Colors, inner: radii[0], outer: radii[1] },
-  { colors: ring3Colors, inner: radii[1], outer: radii[2] },
-  { colors: ring4Colors, inner: radii[2], outer: radii[3] }
-];
+  <!-- ring 4: inner 139 -> 777 px (outer big colorful ring) -->
+  <!-- 17 sectors, sampled outer-ring colors -->
+  <path d="M 1023.471 1018.692 L 1266.168 1058.260 A 777 777 0 0 1 1241.341 1186.138 L 1023.471 1018.692 A 777 777 0 0 0 1023.471 1018.692 Z" fill="#ca9868" stroke="none"/>
+  <path d="M 1023.471 1018.692 L 1241.341 1186.138 A 777 777 0 0 1 1184.079 1304.399 L 1023.471 1018.692 A 777 777 0 0 0 1023.471 1018.692 Z" fill="#c07965" stroke="none"/>
+  <path d="M 1023.471 1018.692 L 1184.079 1304.399 A 777 777 0 0 1 1097.456 1403.753 L 1023.471 1018.692 A 777 777 0 0 0 1023.471 1018.692 Z" fill="#c1867f" stroke="none"/>
+  <path d="M 1023.471 1018.692 L 1097.456 1403.753 A 777 777 0 0 1 997.327 1468.300 L 1023.471 1018.692 A 777 777 0 0 0 1023.471 1018.692 Z" fill="#bf9890" stroke="none"/>
+  <path d="M 1023.471 1018.692 L 997.327 1468.300 A 777 777 0 0 1 892.199 1488.351 L 1023.471 1018.692 A 777 777 0 0 0 1023.471 1018.692 Z" fill="#a68862" stroke="none"/>
+  <path d="M 1023.471 1018.692 L 892.199 1488.351 A 777 777 0 0 1 778.297 1451.685 L 1023.471 1018.692 A 777 777 0 0 0 1023.471 1018.692 Z" fill="#9d8d82" stroke="none"/>
+  <path d="M 1023.471 1018.692 L 778.297 1451.685 A 777 777 0 0 1 690.939 1351.275 L 1023.471 1018.692 A 777 777 0 0 0 1023.471 1018.692 Z" fill="#717a85" stroke="none"/>
+  <path d="M 1023.471 1018.692 L 690.939 1351.275 A 777 777 0 0 1 637.764 1215.081 L 1023.471 1018.692 A 777 777 0 0 0 1023.471 1018.692 Z" fill="#5f6a73" stroke="none"/>
+  <path d="M 1023.471 1018.692 L 637.764 1215.081 A 777 777 0 0 1 620.712 1066.121 L 1023.471 1018.692 A 777 777 0 0 0 1023.471 1018.692 Z" fill="#444867" stroke="none"/>
+  <path d="M 1023.471 1018.692 L 620.712 1066.121 A 777 777 0 0 1 640.836 914.439 L 1023.471 1018.692 A 777 777 0 0 0 1023.471 1018.692 Z" fill="#5b606b" stroke="none"/>
+  <path d="M 1023.471 1018.692 L 640.836 914.439 A 777 777 0 0 1 697.168 778.219 L 1023.471 1018.692 A 777 777 0 0 0 1023.471 1018.692 Z" fill="#685150" stroke="none"/>
+  <path d="M 1023.471 1018.692 L 697.168 778.219 A 777 777 0 0 1 793.252 666.751 L 1023.471 1018.692 A 777 777 0 0 0 1023.471 1018.692 Z" fill="#615a49" stroke="none"/>
+  <path d="M 1023.471 1018.692 L 793.252 666.751 A 777 777 0 0 1 922.845 587.430 L 1023.471 1018.692 A 777 777 0 0 0 1023.471 1018.692 Z" fill="#4f683e" stroke="none"/>
+  <path d="M 1023.471 1018.692 L 922.845 587.430 A 777 777 0 0 1 1070.342 545.071 L 1023.471 1018.692 A 777 777 0 0 0 1023.471 1018.692 Z" fill="#5d6c40" stroke="none"/>
+  <path d="M 1023.471 1018.692 L 1070.342 545.071 A 777 777 0 0 1 1222.164 538.157 L 1023.471 1018.692 A 777 777 0 0 0 1023.471 1018.692 Z" fill="#7c764d" stroke="none"/>
+  <path d="M 1023.471 1018.692 L 1222.164 538.157 A 777 777 0 0 1 1348.176 573.587 L 1023.471 1018.692 A 777 777 0 0 0 1023.471 1018.692 Z" fill="#8f6f52" stroke="none"/>
 
-// === DRAW RINGS ===
-rings.forEach((ring, idx) => {
-  const arc = d3.arc()
-      .innerRadius(ring.inner)
-      .outerRadius(ring.outer);
+  <!-- small black center circle and label -->
+  <circle cx="1023.471" cy="1018.692" r="28.000" fill="#000"/>
+  <text x="1023.471" y="1026.692" class="center" font-size="48" fill="#fff" text-anchor="middle">Tibi</text>
 
-  const group = g.append("g")
-      .attr("class", `ring ring-${idx+1}`);
-
-  const pie = d3.pie().value(1)(ring.colors);
-
-  group.selectAll("path")
-    .data(pie)
-    .join("path")
-      .attr("d", arc)
-      .attr("fill", d => d.data)
-      .attr("stroke", "black")
-      .attr("stroke-width", 0.5);
-
-  // drag rotation
-  let currentAngle = 0;
-  const drag = d3.drag()
-    .on("drag", (event) => {
-      const dx = event.x - width/2;
-      const dy = event.y - height/2;
-      const angle = Math.atan2(dy, dx) * 180 / Math.PI;
-      const delta = angle - currentAngle;
-      group.attr("transform", `rotate(${delta})`);
-      group.attr("data-angle", delta);
-    })
-    .on("start", (event) => {
-      const dx = event.x - width/2;
-      const dy = event.y - height/2;
-      currentAngle = Math.atan2(dy, dx) * 180 / Math.PI;
-    });
-  group.call(drag);
-});
-
-// === LABELS + LEADER LINES (right side, stacked) ===
-const labelData = [
-  { text: "Ring 4", ringIdx: 3, yOffset: -60 },
-  { text: "Ring 3", ringIdx: 2, yOffset: -20 },
-  { text: "Ring 2", ringIdx: 1, yOffset: 20 },
-  { text: "Ring 1", ringIdx: 0, yOffset: 60 }
-];
-
-labelData.forEach(ld => {
-  const ring = rings[ld.ringIdx];
-  const xStart = ring.outer * Math.cos(0);
-  const yStart = ring.outer * Math.sin(0);
-  const xEnd = width/2 + ring.outer + 100;
-  const yEnd = height/2 + ld.yOffset;
-
-  svg.append("line")
-    .attr("class", "leader")
-    .attr("x1", width/2 + xStart)
-    .attr("y1", height/2 + yStart)
-    .attr("x2", xEnd - 30)
-    .attr("y2", yEnd);
-
-  svg.append("text")
-    .attr("class", "label")
-    .attr("x", xEnd)
-    .attr("y", yEnd)
-    .attr("dominant-baseline", "middle")
-    .text(ld.text);
-});
-
-// === Center label ===
-g.append("circle")
-  .attr("r", radii[0]/2)
-  .attr("fill", "black");
-g.append("text")
-  .attr("fill", "white")
-  .attr("text-anchor", "middle")
-  .attr("dominant-baseline", "middle")
-  .style("font-size", "20px")
-  .text("Tibi");
-
-</script>
+</svg>
+  </div>
 </body>
 </html>
