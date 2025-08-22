@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!DOCTYPE html>  
 <html lang="en">
 <head>
 <meta charset="utf-8" />
@@ -46,12 +46,21 @@ Pie-wedge stacked wheel:
 - Rings are drawn outer -> inner so inner rings sit on top
 - Small overlapDeg applied to slices to mitigate anti-alias seams
 - Drag groups (rings) to rotate independently; click slice to highlight across rings
+- Each ring now has its own segment count. Clicking maps the angular position to the
+  corresponding slice in every ring (works with rotations).
 */
 
 (function(){
   const svg = document.getElementById('wheel');
   const cx = 300, cy = 300;
-  const segments = 12;
+
+  // segments per ring (requested)
+  const segmentsByRing = {
+    1: 1,
+    2: 8,
+    3: 17,
+    4: 19
+  };
 
   // ring radii
   const ringConfig = {
@@ -61,12 +70,12 @@ Pie-wedge stacked wheel:
     4: {rOut: 300}
   };
 
-  // same image-sampled palettes you approved
+  // same image-sampled palettes you approved (will wrap if palette shorter than segments)
   const palettes = {
     1: ["#000000"],
     2: ["#767b7b","#b3b5b4","#ebf4f3","#dddfd6","#c9c2b2","#9c8b90","#59535d","#0c1524","#5b3512","#604319"],
-    3: ["#e28d40","#cb5b2a","#a64f38","#6c1e14","#743d4b","#655a64","#7e6c89","#68799a","#54787a","#426d60","#7d8661","#c99c3c"],
-    4: ["#f6851e","#ed1d26","#dc1c24","#ece811","#ecf09b","#67c7ef","#bcc5e4","#824e9f","#d43795","#ee97c0","#059347","#dceed9"]
+    3: ["#e28d40","#cb5b2a","#a64f38","#6c1e14","#743d4b","#655a64","#7e6c89","#68799a","#54787a","#426d60","#7d8661","#c99c3c","#d2b59a","#b08a6a"],
+    4: ["#f6851e","#ed1d26","#dc1c24","#ece811","#ecf09b","#67c7ef","#bcc5e4","#824e9f","#d43795","#ee97c0","#059347","#dceed9","#8aa4b6","#3b5f3a","#f0c8a4","#9a6b8f","#c4d9ef","#2b2b2b","#6f6c5f"]
   };
 
   // angle overlap to prevent seams
@@ -76,17 +85,27 @@ Pie-wedge stacked wheel:
   [4,3,2,1].forEach(ring => {
     const g = document.getElementById('ring' + ring);
     g.dataset.rotation = '0';
-    const pal = palettes[ring];
+    const pal = palettes[ring] || ["#ccc"];
     const rOut = ringConfig[ring].rOut;
+    const segments = segmentsByRing[ring];
     for (let i=0;i<segments;i++){
       const seg = 360 / segments;
       const start = (i*seg) - overlapDeg/2;
       const end   = ((i+1)*seg) + overlapDeg/2;
       const path = document.createElementNS('http://www.w3.org/2000/svg','path');
       path.classList.add('slice');
+
+      // path for wedge (center -> outer arc -> center)
       path.setAttribute('d', wedgePath(cx,cy, rOut, start, end));
       path.setAttribute('fill', pal[i % pal.length]);
-      path.setAttribute('data-index', i);
+
+      // store segment index and nominal mid-angle (before any group rotation)
+      const nominalMid = ((i + 0.5) * seg) % 360;
+      path.setAttribute('data-seg-index', i);
+      path.setAttribute('data-mid', nominalMid);
+      path.setAttribute('data-start', (i*seg) % 360);
+      path.setAttribute('data-end', ((i+1)*seg) % 360);
+      path.setAttribute('data-index', i); // legacy attr for convenience
       path.setAttribute('data-ring', ring);
       path.addEventListener('click', onSliceClick);
       g.appendChild(path);
@@ -157,19 +176,40 @@ Pie-wedge stacked wheel:
   });
 
   // highlight across rings on click
-  let highlightedIndex = null;
+  let highlightedKey = null;
   function onSliceClick(evt){
     evt.stopPropagation();
-    const idx = parseInt(evt.currentTarget.dataset.index,10);
-    if (highlightedIndex === idx) { clearHighlights(); highlightedIndex = null; }
-    else { highlightedIndex = idx; applyHighlights(idx); }
+
+    const clickedPath = evt.currentTarget;
+    const ring = parseInt(clickedPath.dataset.ring,10);
+    const g = document.getElementById('ring' + ring);
+    const groupRot = parseFloat(g.dataset.rotation) || 0;
+    const localMid = parseFloat(clickedPath.dataset.mid);
+    // absolute mid angle in wheel coordinates (0-360)
+    const absoluteMid = (localMid + groupRot + 360) % 360;
+
+    // create a key for toggling: ring:idx:absoluteMidRounded
+    const key = Math.round(absoluteMid * 100) / 100;
+
+    if (highlightedKey === key) { // toggle off
+      clearHighlights();
+      highlightedKey = null;
+      return;
+    }
+
+    highlightedKey = key;
+    applyHighlightsAtAbsoluteAngle(absoluteMid);
   }
 
-  function applyHighlights(idx){
+  function applyHighlightsAtAbsoluteAngle(absAngle){
     clearHighlights();
     for (let r=1;r<=4;r++){
       const g = document.getElementById('ring'+r);
-      const slice = g.querySelector('path[data-index="'+idx+'"]');
+      const rot = parseFloat(g.dataset.rotation) || 0;
+      const n = segmentsByRing[r];
+      const localAngleForR = (absAngle - rot + 360) % 360;
+      const idx = Math.floor((localAngleForR) / (360 / n)) % n;
+      const slice = g.querySelector('path[data-seg-index="'+idx+'"]');
       if (slice) slice.classList.add('slice-highlight');
     }
   }
@@ -180,7 +220,7 @@ Pie-wedge stacked wheel:
 
   // click background clears highlight
   svg.addEventListener('click', (e) => {
-    if (e.target === svg) { clearHighlights(); highlightedIndex = null; }
+    if (e.target === svg) { clearHighlights(); highlightedKey = null; }
   });
 
   // keyboard nudges
