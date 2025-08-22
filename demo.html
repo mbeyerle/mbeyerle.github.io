@@ -1,70 +1,210 @@
-<!doctype html>
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-<meta charset="utf-8">
-<title>Tibi Color Wheel Reproduction</title>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Tibi Color Wheel — Pie-slice stacked (no gaps)</title>
 <style>
-  body { margin:0; background:#000; display:flex; align-items:center; justify-content:center; height:100vh; }
-  svg { max-width:92vmin; height:auto; }
+  :root{
+    --size:760px;
+    --bg:#000;
+    --ui:#fff;
+  }
+  html,body{height:100%;margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;}
+  body{display:flex;align-items:center;justify-content:center;background:var(--bg);color:var(--ui);padding:24px}
+  .wrap{width:min(var(--size),96vw);text-align:center;}
+  h1{color:#fff;margin:6px 0 12px;font-size:18px}
+  .canvas-wrap{background:transparent;border-radius:12px;padding:12px;display:flex;gap:12px;align-items:center;justify-content:center}
+  svg{touch-action:none; display:block; max-width:100%;}
+  .slice { stroke:none; shape-rendering:geometricPrecision; pointer-events:auto; cursor:pointer; }
+  .slice-highlight { filter: drop-shadow(0 4px 12px rgba(0,0,0,.55)); stroke:#ffffffcc; stroke-width:3; }
+  .center-label { font-family: "Libre Baskerville", Georgia, serif; font-weight:700; fill:#fff; text-anchor:middle; dominant-baseline:middle; letter-spacing:2px; }
 </style>
 </head>
 <body>
-<!--
-  Reproduction of the 4-ring color wheel you provided.
-  - This is an SVG with arcs (donut-sector paths) stacked outer -> inner.
-  - Save this file as tibi-wheel.html and open in a browser.
--->
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2048 2038" width="800" height="800">
-  <!-- Outer ring (ring 4) -->
-  <path d="M 1818.809 959.355 A 773.000 773.000 0 0 1 1678.179 1221.664 L 1685.746 1118.138 A 668.000 668.000 0 0 0 1802.638 968.097 Z" fill="#f9d36f" stroke="#f9d36f" stroke-width="1"/>
-  <path d="M 1678.179 1221.664 A 773.000 773.000 0 0 1 1536.681 1371.872 L 1624.019 1269.081 A 668.000 668.000 0 0 0 1685.746 1118.138 Z" fill="#edef6f" stroke="#edef6f" stroke-width="1"/>
-  <path d="M 1536.681 1371.872 A 773.000 773.000 0 0 1 1262.382 1515.318 L 1405.405 1419.194 A 668.000 668.000 0 0 0 1624.019 1269.081 Z" fill="#61b5f0" stroke="#61b5f0" stroke-width="1"/>
-  <path d="M 1262.382 1515.318 A 773.000 773.000 0 0 1 1009.795 1565.323 L 1156.219 1503.459 A 668.000 668.000 0 0 0 1405.405 1419.194 Z" fill="#03a0dc" stroke="#03a0dc" stroke-width="1"/>
-  <path d="M 1009.795 1565.323 A 773.000 773.000 0 0 1 646.933 1522.540 L 843.952 1486.288 A 668.000 668.000 0 0 0 1156.219 1503.459 Z" fill="#eeee99" stroke="#eeee99" stroke-width="1"/>
-  <path d="M 646.933 1522.540 A 773.000 773.000 0 0 1 400.465 1366.287 L 599.515 1364.166 A 668.000 668.000 0 0 0 843.952 1486.288 Z" fill="#0495d2" stroke="#0495d2" stroke-width="1"/>
-  <path d="M 400.465 1366.287 A 773.000 773.000 0 0 1 220.882 1089.106 L 436.777 1124.098 A 668.000 668.000 0 0 0 599.515 1364.166 Z" fill="#3b59a8" stroke="#3b59a8" stroke-width="1"/>
-  <path d="M 220.882 1089.106 A 773.000 773.000 0 0 1 211.581 808.252 L 440.001 846.389 A 668.000 668.000 0 0 0 436.777 1124.098 Z" fill="#bdc5e4" stroke="#bdc5e4" stroke-width="1"/>
-  <path d="M 211.581 808.252 A 773.000 773.000 0 0 1 283.538 560.017 L 505.568 623.808 A 668.000 668.000 0 0 0 440.001 846.389 Z" fill="#824e9f" stroke="#824e9f" stroke-width="1"/>
-  <path d="M 283.538 560.017 A 773.000 773.000 0 0 1 444.541 347.651 L 586.822 435.299 A 668.000 668.000 0 0 0 505.568 623.808 Z" fill="#bc93c4" stroke="#bc93c4" stroke-width="1"/>
-  <path d="M 444.541 347.651 A 773.000 773.000 0 0 1 674.390 234.052 L 740.072 352.125 A 668.000 668.000 0 0 0 586.822 435.299 Z" fill="#d43795" stroke="#d43795" stroke-width="1"/>
-  <path d="M 674.390 234.052 A 773.000 773.000 0 0 1 911.955 199.507 L 894.106 324.166 A 668.000 668.000 0 0 0 740.072 352.125 Z" fill="#ed97c0" stroke="#ed97c0" stroke-width="1"/>
-  <path d="M 911.955 199.507 A 773.000 773.000 0 0 1 1114.365 235.755 L 1062.959 360.795 A 668.000 668.000 0 0 0 894.106 324.166 Z" fill="#00ab4f" stroke="#00ab4f" stroke-width="1"/>
-  <path d="M 1114.365 235.755 A 773.000 773.000 0 0 1 1339.141 347.886 L 1247.061 415.375 A 668.000 668.000 0 0 0 1062.959 360.795 Z" fill="#059247" stroke="#059247" stroke-width="1"/>
-  <path d="M 1339.141 347.886 A 773.000 773.000 0 0 1 1518.735 510.854 L 1423.334 582.707 A 668.000 668.0000 0 0 0 1247.061 415.375 Z" fill="#74c480" stroke="#74c480" stroke-width="1"/>
-  <path d="M 1518.735 510.854 A 773.000 773.000 0 0 1 1645.330 707.834 L 1566.743 780.327 A 668.000 668.000 0 0 0 1423.334 582.707 Z" fill="#daedda" stroke="#daedda" stroke-width="1"/>
+  <div class="wrap">
+    <h1>Tibi Color Wheel — Pie-slice stacked (no gaps)</h1>
+    <div class="canvas-wrap">
+      <svg id="wheel" viewBox="0 0 600 600" width="720" height="720" aria-label="Tibi Color Wheel">
+        <!-- groups (outer first so inner rings paint on top) -->
+        <g id="ring4" data-ring="4" transform="rotate(0 300 300)"></g>
+        <g id="ring3" data-ring="3" transform="rotate(0 300 300)"></g>
+        <g id="ring2" data-ring="2" transform="rotate(0 300 300)"></g>
+        <g id="ring1" data-ring="1" transform="rotate(0 300 300)"></g>
 
-  <!-- Middle ring (ring 3) -->
-  <path d="M 1685.746 1118.138 A 668.000 668.000 0 0 1 1549.940 1343.030 L 1556.861 1239.066 A 434.000 434.000 0 0 0 1689.002 1101.827 Z" fill="#e28125" stroke="#e28125" stroke-width="1"/>
-  <path d="M 1549.940 1343.030 A 668.000 668.000 0 0 1 1416.768 1466.409 L 1477.254 1365.424 A 434.000 434.000 0 0 0 1556.861 1239.066 Z" fill="#cb5a29" stroke="#cb5a29" stroke-width="1"/>
-  <path d="M 1416.768 1466.409 A 668.000 668.000 0 0 1 1236.336 1563.196 L 1345.171 1486.502 A 434.000 434.000 0 0 0 1477.254 1365.424 Z" fill="#a65038" stroke="#a65038" stroke-width="1"/>
-  <path d="M 1236.336 1563.196 A 668.000 668.000 0 0 1 1021.683 1598.572 L 1187.810 1534.399 A 434.000 434.000 0 0 0 1345.171 1486.502 Z" fill="#8d382e" stroke="#8d382e" stroke-width="1"/>
-  <path d="M 1021.683 1598.572 A 668.000 668.000 0 0 1 813.596 1555.064 L 995.353 1514.020 A 434.000 434.000 0 0 0 1187.810 1534.399 Z" fill="#6c1e14" stroke="#6c1e14" stroke-width="1"/>
-  <path d="M 813.596 1555.064 A 668.000 668.000 0 0 1 599.235 1442.836 L 766.686 1412.955 A 434.000 434.000 0 0 0 995.353 1514.020 Z" fill="#c96735" stroke="#c96735" stroke-width="1"/>
-  <path d="M 599.235 1442.836 A 668.000 668.000 0 0 1 421.186 1288.911 L 613.209 1280.249 A 434.000 434.000 0 0 0 766.686 1412.955 Z" fill="#eb8f5a" stroke="#eb8f5a" stroke-width="1"/>
-  <path d="M 421.186 1288.911 A 668.000 668.000 0 0 1 275.765 1097.375 L 487.789 1111.108 A 434.000 434.000 0 0 0 613.209 1280.249 Z" fill="#f3e9c4" stroke="#f3e9c4" stroke-width="1"/>
-  <path d="M 275.765 1097.375 A 668.000 668.000 0 0 1 209.238 884.035 L 467.731 898.658 A 434.000 434.000 0 0 0 487.789 1111.108 Z" fill="#d6f3c7" stroke="#d6f3c7" stroke-width="1"/>
-  <path d="M 209.238 884.035 A 668.000 668.000 0 0 1 263.976 650.665 L 543.017 682.770 A 434.000 434.000 0 0 0 467.731 898.658 Z" fill="#74c480" stroke="#74c480" stroke-width="1"/>
-  <path d="M 263.976 650.665 A 668.000 668.000 0 0 1 362.294 460.803 L 579.994 524.536 A 434.000 434.000 0 0 0 543.017 682.770 Z" fill="#74bd9b" stroke="#74bd9b" stroke-width="1"/>
-  <path d="M 362.294 460.803 A 668.000 668.000 0 0 1 523.954 324.422 L 669.940 408.867 A 434.000 434.000 0 0 0 579.994 524.536 Z" fill="#5cae9a" stroke="#5cae9a" stroke-width="1"/>
-  <path d="M 523.954 324.422 A 668.000 668.000 0 0 1 743.532 237.140 L 815.124 344.494 A 434.000 434.000 0 0 0 669.940 408.867 Z" fill="#3b7f70" stroke="#3b7f70" stroke-width="1"/>
-  <path d="M 743.532 237.140 A 668.000 668.000 0 0 1 964.039 210.136 L 931.009 328.143 A 434.000 434.000 0 0 0 815.124 344.494 Z" fill="#3b59a8" stroke="#3b59a8" stroke-width="1"/>
-  <path d="M 964.039 210.136 A 668.000 668.000 0 0 1 1176.303 240.969 L 1101.093 354.962 A 434.000 434.000 0 0 0 931.009 328.143 Z" fill="#67c6ef" stroke="#67c6ef" stroke-width="1"/>
-  <path d="M 1176.303 240.969 A 668.000 668.000 0 0 1 1362.637 317.352 L 1257.136 415.840 A 434.000 434.000 0 0 0 1101.093 354.962 Z" fill="#03a0dc" stroke="#03a0dc" stroke-width="1"/>
-  <path d="M 1362.637 317.352 A 668.000 668.000 0 0 1 1498.660 425.389 L 1393.596 504.741 A 434.000 434.000 0 0 0 1257.136 415.840 Z" fill="#eeee99" stroke="#eeee99" stroke-width="1"/>
-  <path d="M 1498.660 425.389 A 668.000 668.000 0 0 1 1623.759 566.997 L 1538.639 640.058 A 434.000 434.000 0 0 0 1393.596 504.741 Z" fill="#3b59a8" stroke="#3b59a8" stroke-width="1"/>
+        <!-- final center cover so center is a clean disk -->
+        <circle id="centerDisk" cx="300" cy="300" r="48" fill="#050505"/>
+        <text class="center-label" x="300" y="300" font-size="22">T i b i</text>
+      </svg>
+    </div>
+  </div>
 
-  <!-- Inner ring (ring 2) -->
-  <path d="M 1678.179 1221.664 A 434.000 434.000 0 0 1 1585.556 1425.041 L 1649.637 1343.875 A 156.000 156.000 0 0 0 1691.356 1198.235 Z" fill="#b2b5b4" stroke="#b2b5b4" stroke-width="1"/>
-  <path d="M 1585.556 1425.041 A 434.000 434.000 0 0 1 1431.193 1515.681 L 1546.720 1447.136 A 156.000 156.000 0 0 0 1649.637 1343.875 Z" fill="#ebf3f3" stroke="#ebf3f3" stroke-width="1"/>
-  <path d="M 1431.193 1515.681 A 434.000 434.000 0 0 1 1254.442 1539.327 L 1405.941 1498.877 A 156.000 156.000 0 0 0 1546.720 1447.136 Z" fill="#c9c3b2" stroke="#c9c3b2" stroke-width="1"/>
-  <path d="M 1254.442 1539.327 A 434.000 434.000 0 0 1 1078.002 1492.972 L 1216.978 1480.902 A 156.000 156.000 0 0 0 1405.941 1498.877 Z" fill="#9c8b90" stroke="#9c8b90" stroke-width="1"/>
-  <path d="M 1078.002 1492.972 A 434.000 434.000 0 0 1 928.198 1373.658 L 1037.480 1372.101 A 156.000 156.000 0 0 0 1216.978 1480.902 Z" fill="#0c1424" stroke="#0c1424" stroke-width="1"/>
-  <path d="M 928.198 1373.658 A 434.000 434.000 0 0 1 811.172 1195.596 L 896.129 1234.923 A 156.000 156.000 0 0 0 1037.480 1372.101 Z" fill="#5b3511" stroke="#5b3511" stroke-width="1"/>
-  <path d="M 811.172 1195.596 A 434.000 434.000 0 0 1 764.015 995.797 L 904.620 1051.181 A 156.000 156.000 0 0 0 896.129 1234.923 Z" fill="#654f1f" stroke="#654f1f" stroke-width="1"/>
-  <path d="M 764.015 995.797 A 434.000 434.000 0 0 1 829.090 816.897 L 1010.142 873.921 A 156.000 156.000 0 0 0 904.620 1051.181 Z" fill="#32373b" stroke="#32373b" stroke-width="1"/>
+<script>
+/*
+Pie-wedge stacked wheel:
+- Each slice for a ring is drawn as a full wedge (center -> outerRadius arc -> center)
+- Rings are drawn outer -> inner so inner rings sit on top
+- Small overlapDeg applied to slices to mitigate anti-alias seams
+- Drag groups (rings) to rotate independently; click slice to highlight across rings
+*/
 
-  <!-- Center circle (black) -->
-  <circle cx="1024" cy="1019" r="154" fill="#000000"/>
-</svg>
+(function(){
+  const svg = document.getElementById('wheel');
+  const cx = 300, cy = 300;
+  const segments = 12;
+
+  // ring radii
+  const ringConfig = {
+    1: {rOut: 60},
+    2: {rOut: 140},
+    3: {rOut: 240},
+    4: {rOut: 300}
+  };
+
+  // same image-sampled palettes you approved
+  const palettes = {
+    1: ["#040706","#040706","#040706","#040706","#040706","#040706","#040706","#040706","#040706","#040706","#040706","#040706"],
+    2: ["#767b7b","#b3b5b4","#ebf4f3","#dddfd6","#c9c2b2","#9c8b90","#59535d","#0c1524","#5b3512","#604319","#654f20","#32363a"],
+    3: ["#e28d40","#cb5b2a","#a64f38","#6c1e14","#743d4b","#655a64","#7e6c89","#68799a","#54787a","#426d60","#7d8661","#c99c3c"],
+    4: ["#f6851e","#ed1d26","#dc1c24","#ece811","#ecf09b","#67c7ef","#bcc5e4","#824e9f","#d43795","#ee97c0","#059347","#dceed9"]
+  };
+
+  // angle overlap to prevent seams
+  const overlapDeg = 0.8;
+
+  // Build wedges for each ring, outer -> inner
+  [4,3,2,1].forEach(ring => {
+    const g = document.getElementById('ring' + ring);
+    g.dataset.rotation = '0';
+    const pal = palettes[ring];
+    const rOut = ringConfig[ring].rOut;
+    for (let i=0;i<segments;i++){
+      const seg = 360 / segments;
+      const start = (i*seg) - overlapDeg/2;
+      const end   = ((i+1)*seg) + overlapDeg/2;
+      const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+      path.classList.add('slice');
+      path.setAttribute('d', wedgePath(cx,cy, rOut, start, end));
+      path.setAttribute('fill', pal[i % pal.length]);
+      path.setAttribute('data-index', i);
+      path.setAttribute('data-ring', ring);
+      path.addEventListener('click', onSliceClick);
+      g.appendChild(path);
+    }
+  });
+
+  // Build wedge path: center -> outer arc -> center (closed)
+  function wedgePath(cx,cy,rOut,startDeg,endDeg){
+    const start = polarToCartesian(cx,cy,rOut,endDeg);
+    const end   = polarToCartesian(cx,cy,rOut,startDeg);
+
+    let sweep = endDeg - startDeg;
+    while (sweep < 0) sweep += 360;
+    sweep = sweep % 360;
+    const largeArc = (sweep > 180) ? 1 : 0;
+
+    return `M ${cx} ${cy} L ${start.x} ${start.y} A ${rOut} ${rOut} 0 ${largeArc} 0 ${end.x} ${end.y} Z`;
+  }
+
+  function polarToCartesian(cx,cy,r,deg){
+    const rad = (deg - 90) * Math.PI / 180.0;
+    return { x: cx + (r * Math.cos(rad)), y: cy + (r * Math.sin(rad)) };
+  }
+
+  // Interaction: rotate rings (pointer events)
+  let active = null;
+  const locks = {1:false,2:false,3:false,4:false};
+
+  function getPointerAngle(evt){
+    const p = (evt.touches && evt.touches[0]) ? evt.touches[0] : evt;
+    const pt = svg.createSVGPoint();
+    pt.x = p.clientX; pt.y = p.clientY;
+    const loc = pt.matrixTransform(svg.getScreenCTM().inverse());
+    const dx = loc.x - cx, dy = loc.y - cy;
+    return Math.atan2(dy,dx) * 180 / Math.PI;
+  }
+
+  function findRingGroupFromTarget(t){
+    return t.closest ? t.closest('g') : null;
+  }
+
+  svg.addEventListener('pointerdown', (evt)=>{
+    if (evt.button !== undefined && evt.button !== 0) return;
+    const g = findRingGroupFromTarget(evt.target);
+    if (!g) return;
+    const ringNum = parseInt(g.dataset.ring,10);
+    if (locks[ringNum]) return;
+    svg.setPointerCapture && svg.setPointerCapture(evt.pointerId);
+    active = { ringEl: g, startAngle: getPointerAngle(evt), startRotation: parseFloat(g.dataset.rotation) || 0, pointerId: evt.pointerId };
+    evt.preventDefault();
+  });
+
+  window.addEventListener('pointermove', (evt)=>{
+    if (!active || active.pointerId !== evt.pointerId) return;
+    const angleNow = getPointerAngle(evt);
+    let delta = angleNow - active.startAngle;
+    if (delta > 180) delta -= 360;
+    if (delta < -180) delta += 360;
+    const newRot = active.startRotation + delta;
+    active.ringEl.dataset.rotation = newRot;
+    active.ringEl.setAttribute('transform', `rotate(${newRot} ${cx} ${cy})`);
+  });
+
+  window.addEventListener('pointerup', (evt)=>{
+    if (!active || active.pointerId !== evt.pointerId) return;
+    svg.releasePointerCapture && svg.releasePointerCapture(evt.pointerId);
+    active = null;
+  });
+
+  // highlight across rings on click
+  let highlightedIndex = null;
+  function onSliceClick(evt){
+    evt.stopPropagation();
+    const idx = parseInt(evt.currentTarget.dataset.index,10);
+    if (highlightedIndex === idx) { clearHighlights(); highlightedIndex = null; }
+    else { highlightedIndex = idx; applyHighlights(idx); }
+  }
+
+  function applyHighlights(idx){
+    clearHighlights();
+    for (let r=1;r<=4;r++){
+      const g = document.getElementById('ring'+r);
+      const slice = g.querySelector('path[data-index="'+idx+'"]');
+      if (slice) slice.classList.add('slice-highlight');
+    }
+  }
+
+  function clearHighlights(){
+    svg.querySelectorAll('.slice-highlight').forEach(el => el.classList.remove('slice-highlight'));
+  }
+
+  // click background clears highlight
+  svg.addEventListener('click', (e) => {
+    if (e.target === svg) { clearHighlights(); highlightedIndex = null; }
+  });
+
+  // keyboard nudges
+  window.addEventListener('keydown', (e)=>{
+    if (e.key >= '1' && e.key <= '4') {
+      const r = parseInt(e.key,10);
+      const g = document.getElementById('ring'+r);
+      const cur = parseFloat(g.dataset.rotation) || 0;
+      g.dataset.rotation = cur + 30;
+      g.setAttribute('transform', `rotate(${cur+30} ${cx} ${cy})`);
+    }
+  });
+
+  // expose simple API for debugging / external control
+  window.tibiWheel = {
+    rotateTo: (ring,deg) => {
+      const g = document.getElementById('ring'+ring);
+      g.dataset.rotation = deg;
+      g.setAttribute('transform', `rotate(${deg} ${cx} ${cy})`);
+    },
+    lockRing: (ring,locked) => { locks[ring] = !!locked; }
+  };
+
+})();
+</script>
 </body>
 </html>
