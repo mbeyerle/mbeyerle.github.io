@@ -12,7 +12,7 @@
   }
   html,body{height:100%;margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;}
   body{display:flex;align-items:center;justify-content:center;background:var(--bg);color:var(--ui);padding:24px}
-  .wrap{width:min(var(--size),96vw);text-align:center; position:relative;} /* made relative for top-right control */
+  .wrap{width:min(var(--size),96vw);text-align:center; position:relative;}
   h1{color:#fff;margin:6px 0 12px;font-size:18px}
   .canvas-wrap{background:transparent;border-radius:12px;padding:12px;display:flex;gap:12px;align-items:center;justify-content:center}
   svg{touch-action:none; display:block; max-width:100%;}
@@ -57,18 +57,6 @@
 
     <div class="canvas-wrap">
       <svg id="wheel" viewBox="0 0 600 600" width="720" height="720" aria-label="Tibi Color Wheel">
-        <defs>
-          <!-- Mask that will hide the wedge (black) and leave rest visible (white).
-               We'll invert this by applying mask to a black overlay rect so the wedge becomes transparent. -->
-          <mask id="focusMask" maskUnits="userSpaceOnUse">
-            <!-- white = allow overlay to show; black path will carve out the wedge so overlay becomes transparent there -->
-            <rect x="0" y="0" width="600" height="600" fill="white"></rect>
-            <!-- the wedge path is filled black here (mask black => element becomes transparent at that region).
-                 We'll set the 'd' for this path in JS so it's exact and uses the same center. -->
-            <path id="focusMaskWedge" d="" fill="black"></path>
-          </mask>
-        </defs>
-
         <!-- groups (outer first so inner rings paint on top) -->
         <g id="ring4" data-ring="4" transform="rotate(0 300 300)"></g>
         <g id="ring3" data-ring="3" transform="rotate(0 300 300)"></g>
@@ -79,19 +67,21 @@
         <circle id="centerDisk" cx="300" cy="300" r="48" fill="#050505"/>
         <text class="center-label" x="300" y="300" font-size="14">Tibi</text>
 
-        <!-- overlay rect that darkens the whole SVG except the masked wedge (transparent there).
-             pointer-events set so only the painted (black) regions capture events; the transparent wedge will be interactive. -->
-        <rect id="focusOverlay" x="0" y="0" width="600" height="600"
-              fill="#000" mask="url(#focusMask)" style="display:none;"
-              pointer-events="visiblePainted"></rect>
+        <!-- overlay path: full-rect outer subpath + wedge subpath as a second subpath.
+             fill-rule:evenodd makes the wedge a hole (transparent) so events pass through there. -->
+        <path id="focusOverlayPath"
+              fill="#000"
+              fill-rule="evenodd"
+              d=""
+              style="display:none;"
+              pointer-events="auto"></path>
       </svg>
     </div>
   </div>
 
 <script>
 /*
-Pie-wedge stacked wheel (unchanged logic). Additionally: a focus checkbox toggles a mask overlay
-which covers everything in black except a narrow 15° sliver centered at east (90°).
+Pie-wedge stacked wheel with focus overlay that allows dragging through the visible wedge.
 */
 
 (function(){
@@ -288,38 +278,41 @@ which covers everything in black except a narrow 15° sliver centered at east (9
     lockRing: (ring,locked) => { locks[ring] = !!locked; }
   };
 
-  /***** Focus overlay setup *****/
+  /***** Focus overlay setup using an even-odd path (rectangle minus wedge) *****/
   const focusCheckbox = document.getElementById('applyFocus');
-  const overlay = document.getElementById('focusOverlay');
-  const maskWedge = document.getElementById('focusMaskWedge');
+  const overlayPath = document.getElementById('focusOverlayPath');
 
   // Focus wedge config (15° wide centered at east/right -> 90°)
   const focusWidth = 15; // degrees visible
-  const focusCenter = 90; // east is 90° in this coordinate system (deg=0 = north)
+  const focusCenter = 90; // east is 90° in this coordinate system
   const wedgeStart = focusCenter - (focusWidth / 2);
   const wedgeEnd = focusCenter + (focusWidth / 2);
 
-  // create path for the mask wedge. Use a slightly larger radius than outer ring to be safe.
-  const maskRadius = Math.max(ringConfig[4].rOut, 320) + 40;
-  maskWedge.setAttribute('d', wedgePath(cx, cy, maskRadius, wedgeStart, wedgeEnd));
+  // Use a radius slightly larger than the outermost ring to produce a clean wedge hole
+  const holeRadius = Math.max(ringConfig[4].rOut, 320) + 60;
 
-  // toggle overlay visibility when checkbox changes
+  // Build the full-rect outer subpath + the wedge subpath (wedge produced by wedgePath)
+  function buildOverlayD(){
+    const rectSub = `M 0 0 H 600 V 600 H 0 Z`;
+    const wedgeSub = wedgePath(cx, cy, holeRadius, wedgeStart, wedgeEnd);
+    return rectSub + ' ' + wedgeSub;
+  }
+
+  overlayPath.setAttribute('d', buildOverlayD());
+  overlayPath.style.display = 'none'; // initially hidden
+
+  // Toggle overlay visibility — when visible, it intercepts events outside the wedge hole;
+  // events inside the hole propagate to underlying wheel elements allowing drag.
   focusCheckbox.addEventListener('change', (e) => {
-    if (e.target.checked) {
-      overlay.style.display = 'block';
-    } else {
-      overlay.style.display = 'none';
-    }
+    overlayPath.style.display = e.target.checked ? 'block' : 'none';
   });
 
   // If you want the focus to persist on page load based on checkbox state:
-  if (focusCheckbox.checked) overlay.style.display = 'block';
+  if (focusCheckbox.checked) overlayPath.style.display = 'block';
 
-  // Optional: if the user resizes or you change radii dynamically, update maskWedge 'd' accordingly.
-  // (Not strictly necessary for static layout, but kept here for completeness.)
+  // update overlay path on resize (if needed)
   window.addEventListener('resize', () => {
-    const newMaskRadius = Math.max(ringConfig[4].rOut, 320) + 40;
-    maskWedge.setAttribute('d', wedgePath(cx, cy, newMaskRadius, wedgeStart, wedgeEnd));
+    overlayPath.setAttribute('d', buildOverlayD());
   });
 
 })();
