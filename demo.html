@@ -90,15 +90,18 @@
 
     <div class="canvas-wrap">
       <svg id="wheel" viewBox="0 0 600 600" width="720" height="720" aria-label="Tibi Color Wheel">
-        <!-- groups (outer first so inner rings paint on top) -->
-        <g id="ring4" data-ring="4" transform="rotate(0 300 300)"></g>
-        <g id="ring3" data-ring="3" transform="rotate(0 300 300)"></g>
-        <g id="ring2" data-ring="2" transform="rotate(0 300 300)"></g>
-        <g id="ring1" data-ring="1" transform="rotate(0 300 300)"></g>
+        <!-- A parent group that we will scale/translate to zoom the wheel during focus -->
+        <g id="wheelGroup">
+          <!-- groups (outer first so inner rings paint on top) -->
+          <g id="ring4" data-ring="4" transform="rotate(0 300 300)"></g>
+          <g id="ring3" data-ring="3" transform="rotate(0 300 300)"></g>
+          <g id="ring2" data-ring="2" transform="rotate(0 300 300)"></g>
+          <g id="ring1" data-ring="1" transform="rotate(0 300 300)"></g>
 
-        <!-- final center cover so center is a clean disk -->
-        <circle id="centerDisk" cx="300" cy="300" r="48" fill="#050505"/>
-        <text class="center-label" x="300" y="300" font-size="14"></text> 
+          <!-- final center cover so center is a clean disk -->
+          <circle id="centerDisk" cx="300" cy="300" r="48" fill="#050505"/>
+          <text class="center-label" x="300" y="300" font-size="14"></text> 
+        </g>
 
         <!-- overlay path: full-rect outer subpath + wedge subpath as a second subpath.
              fill-rule:evenodd makes the wedge a hole (transparent) so events pass through there. -->
@@ -117,13 +120,14 @@
 Pie-wedge stacked wheel with focus overlay that allows dragging through the visible wedge.
 Check boxes: CHECKED = ring visible; UNCHECKED = ring turns black and is non-interactive.
 
-Key changes:
-- Wedges are now annular (have inner radius = previous ring's outer radius) so they don't overlap back to the center.
-- The control panel is positioned to the right of the wrap using left: calc(100% + 12px).
+Focus zoom behavior:
+ - scaleFactor is applied to wheelGroup (scale around center).
+ - overlay hole radius is multiplied by the same factor so the visible wedge reveals the scaled detail.
 */
 
 (function(){
   const svg = document.getElementById('wheel');
+  const wheelGroup = document.getElementById('wheelGroup');
   const cx = 300, cy = 300;
 
   // segments per ring (requested)
@@ -153,7 +157,7 @@ Key changes:
   // angle overlap to prevent seams
   const overlapDeg = 0.8;
 
-  // Build wedges for each ring, outer -> inner
+  // Build wedges for each ring, outer -> inner (annular)
   [4,3,2,1].forEach(ring => {
     const g = document.getElementById('ring' + ring);
     g.dataset.rotation = '0';
@@ -187,13 +191,10 @@ Key changes:
   });
 
   // Build annular wedge path: outer arc then inner arc back.
-  // If rIn === 0 this produces a pie slice (center -> outer arc -> center).
   function wedgePath(cx,cy,rOut,startDeg,endDeg,rIn = 0){
-    // Points on outer arc
     const outerStart = polarToCartesian(cx,cy,rOut,endDeg);
     const outerEnd   = polarToCartesian(cx,cy,rOut,startDeg);
 
-    // Points on inner arc
     const innerEnd = polarToCartesian(cx,cy,rIn,startDeg);
     const innerStart = polarToCartesian(cx,cy,rIn,endDeg);
 
@@ -203,12 +204,9 @@ Key changes:
     const largeArc = (sweep > 180) ? 1 : 0;
 
     if (rIn === 0) {
-      // classic pie slice: move to center, draw outer arc, close to center
       return `M ${cx} ${cy} L ${outerStart.x} ${outerStart.y} A ${rOut} ${rOut} 0 ${largeArc} 0 ${outerEnd.x} ${outerEnd.y} Z`;
     } else {
-      // annular sector: move to outer start, arc to outer end, line to inner end,
-      // arc on inner radius back to inner start, close.
-      // inner arc sweep direction is opposite, so use sweep-flag = 1 to draw back
+      // note inner arc uses opposite sweep flag so the ring sector closes properly
       return `M ${outerStart.x} ${outerStart.y} A ${rOut} ${rOut} 0 ${largeArc} 0 ${outerEnd.x} ${outerEnd.y} L ${innerEnd.x} ${innerEnd.y} A ${rIn} ${rIn} 0 ${largeArc} 1 ${innerStart.x} ${innerStart.y} Z`;
     }
   }
@@ -254,6 +252,7 @@ Key changes:
     if (delta < -180) delta += 360;
     const newRot = active.startRotation + delta;
     active.ringEl.dataset.rotation = newRot;
+    // preserve the ring's local rotate transform while parent wheelGroup may also have transforms
     active.ringEl.setAttribute('transform', `rotate(${newRot} ${cx} ${cy})`);
   });
 
@@ -344,29 +343,60 @@ Key changes:
   const wedgeStart = focusCenter - (focusWidth / 2);
   const wedgeEnd = focusCenter + (focusWidth / 2);
 
-  // Use a radius slightly larger than the outermost ring to produce a clean wedge hole
-  const holeRadius = Math.max(ringConfig[4].rOut, 320) + 60;
+  // base hole radius (used at scale=1)
+  const baseHoleRadius = Math.max(ringConfig[4].rOut, 320) + 60;
+
+  // initial scale factor (1 = normal). Adjust this to taste.
+  const focusScale = 2.2;
 
   // Build the full-rect outer subpath + the wedge subpath (wedge produced by wedgePath)
-  function buildOverlayD(){
+  function buildOverlayD(scale = 1){
     const rectSub = `M 0 0 H 600 V 600 H 0 Z`;
-    const wedgeSub = wedgePath(cx, cy, holeRadius, wedgeStart, wedgeEnd, 0);
+    const holeR = baseHoleRadius * scale;
+    // wedgeSub uses inner radius 0 so it's a wedge-shaped hole that will let events pass
+    const wedgeSub = wedgePath(cx, cy, holeR, wedgeStart, wedgeEnd, 0);
     return rectSub + ' ' + wedgeSub;
   }
 
-  overlayPath.setAttribute('d', buildOverlayD());
-  overlayPath.style.display = 'none'; // initially hidden
+  // function to set wheelGroup transform to scale around center
+  function setWheelScale(scale){
+    if (scale === 1) {
+      wheelGroup.setAttribute('transform', `translate(0 0)`); // no transform on parent
+    } else {
+      // translate center -> scale -> translate back
+      wheelGroup.setAttribute('transform', `translate(${cx} ${cy}) scale(${scale}) translate(${-cx} ${-cy})`);
+    }
+  }
 
-  // Toggle overlay visibility — when visible, it intercepts events outside the wedge hole;
+  // Toggle overlay visibility & zoom — when visible, it intercepts events outside the wedge hole;
   // events inside the hole propagate to underlying wheel elements allowing drag.
   focusCheckbox.addEventListener('change', (e) => {
-    overlayPath.style.display = e.target.checked ? 'block' : 'none';
+    const enabled = !!e.target.checked;
+    if (enabled) {
+      setWheelScale(focusScale);
+      overlayPath.setAttribute('d', buildOverlayD(focusScale));
+      overlayPath.style.display = 'block';
+    } else {
+      setWheelScale(1);
+      overlayPath.setAttribute('d', buildOverlayD(1));
+      overlayPath.style.display = 'none';
+    }
   });
 
-  if (focusCheckbox.checked) overlayPath.style.display = 'block';
+  // initialize overlay & wheel state
+  overlayPath.setAttribute('d', buildOverlayD(1));
+  overlayPath.style.display = 'none';
+  if (focusCheckbox.checked) {
+    setWheelScale(focusScale);
+    overlayPath.setAttribute('d', buildOverlayD(focusScale));
+    overlayPath.style.display = 'block';
+  }
 
   window.addEventListener('resize', () => {
-    overlayPath.setAttribute('d', buildOverlayD());
+    const scale = focusCheckbox.checked ? focusScale : 1;
+    overlayPath.setAttribute('d', buildOverlayD(scale));
+    // ensure wheelGroup transform remains correct after any layout changes
+    setWheelScale(scale);
   });
 
   /***** NEW: Visibility checkbox wiring (checked = visible) *****/
