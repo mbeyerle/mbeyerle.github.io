@@ -12,20 +12,63 @@
   }
   html,body{height:100%;margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;}
   body{display:flex;align-items:center;justify-content:center;background:var(--bg);color:var(--ui);padding:24px}
-  .wrap{width:min(var(--size),96vw);text-align:center;}
+  .wrap{width:min(var(--size),96vw);text-align:center; position:relative;} /* made relative for top-right control */
   h1{color:#fff;margin:6px 0 12px;font-size:18px}
   .canvas-wrap{background:transparent;border-radius:12px;padding:12px;display:flex;gap:12px;align-items:center;justify-content:center}
   svg{touch-action:none; display:block; max-width:100%;}
   .slice { stroke:none; shape-rendering:geometricPrecision; pointer-events:auto; cursor:pointer; }
   .slice-highlight { filter: drop-shadow(0 4px 12px rgba(0,0,0,.55)); stroke:#ffffffcc; stroke-width:3; }
   .center-label { font-family: "Libre Baskerville", Georgia, serif; font-weight:700; fill:#fff; text-anchor:middle; dominant-baseline:middle; letter-spacing:2px; }
+
+  /* Focus control style (top-right) */
+  .focus-control {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: rgba(255,255,255,0.06);
+    color: #fff;
+    border-radius: 8px;
+    padding: 6px 10px;
+    font-size: 14px;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    backdrop-filter: blur(4px);
+    user-select: none;
+    z-index: 40;
+  }
+  .focus-control input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: #fff;
+    cursor: pointer;
+  }
 </style>
 </head>
 <body>
   <div class="wrap">
     <h1>Tibi Color Wheel — Pie-slice stacked (no gaps)</h1>
+
+    <!-- Top-right focus checkbox -->
+    <label class="focus-control" title="Show only a small sliver at the east side">
+      <input id="applyFocus" type="checkbox" />
+      Apply focus
+    </label>
+
     <div class="canvas-wrap">
       <svg id="wheel" viewBox="0 0 600 600" width="720" height="720" aria-label="Tibi Color Wheel">
+        <defs>
+          <!-- Mask that will hide the wedge (black) and leave rest visible (white).
+               We'll invert this by applying mask to a black overlay rect so the wedge becomes transparent. -->
+          <mask id="focusMask" maskUnits="userSpaceOnUse">
+            <!-- white = allow overlay to show; black path will carve out the wedge so overlay becomes transparent there -->
+            <rect x="0" y="0" width="600" height="600" fill="white"></rect>
+            <!-- the wedge path is filled black here (mask black => element becomes transparent at that region).
+                 We'll set the 'd' for this path in JS so it's exact and uses the same center. -->
+            <path id="focusMaskWedge" d="" fill="black"></path>
+          </mask>
+        </defs>
+
         <!-- groups (outer first so inner rings paint on top) -->
         <g id="ring4" data-ring="4" transform="rotate(0 300 300)"></g>
         <g id="ring3" data-ring="3" transform="rotate(0 300 300)"></g>
@@ -35,19 +78,20 @@
         <!-- final center cover so center is a clean disk -->
         <circle id="centerDisk" cx="300" cy="300" r="48" fill="#050505"/>
         <text class="center-label" x="300" y="300" font-size="14">Tibi</text>
+
+        <!-- overlay rect that darkens the whole SVG except the masked wedge (transparent there).
+             pointer-events set so only the painted (black) regions capture events; the transparent wedge will be interactive. -->
+        <rect id="focusOverlay" x="0" y="0" width="600" height="600"
+              fill="#000" mask="url(#focusMask)" style="display:none;"
+              pointer-events="visiblePainted"></rect>
       </svg>
     </div>
   </div>
 
 <script>
 /*
-Pie-wedge stacked wheel:
-- Each slice for a ring is drawn as a full wedge (center -> outerRadius arc -> center)
-- Rings are drawn outer -> inner so inner rings sit on top
-- Small overlapDeg applied to slices to mitigate anti-alias seams
-- Drag groups (rings) to rotate independently; click slice to highlight across rings
-- Each ring now has its own segment count. Clicking maps the angular position to the
-  corresponding slice in every ring (works with rotations).
+Pie-wedge stacked wheel (unchanged logic). Additionally: a focus checkbox toggles a mask overlay
+which covers everything in black except a narrow 15° sliver centered at east (90°).
 */
 
 (function(){
@@ -243,6 +287,40 @@ Pie-wedge stacked wheel:
     },
     lockRing: (ring,locked) => { locks[ring] = !!locked; }
   };
+
+  /***** Focus overlay setup *****/
+  const focusCheckbox = document.getElementById('applyFocus');
+  const overlay = document.getElementById('focusOverlay');
+  const maskWedge = document.getElementById('focusMaskWedge');
+
+  // Focus wedge config (15° wide centered at east/right -> 90°)
+  const focusWidth = 15; // degrees visible
+  const focusCenter = 90; // east is 90° in this coordinate system (deg=0 = north)
+  const wedgeStart = focusCenter - (focusWidth / 2);
+  const wedgeEnd = focusCenter + (focusWidth / 2);
+
+  // create path for the mask wedge. Use a slightly larger radius than outer ring to be safe.
+  const maskRadius = Math.max(ringConfig[4].rOut, 320) + 40;
+  maskWedge.setAttribute('d', wedgePath(cx, cy, maskRadius, wedgeStart, wedgeEnd));
+
+  // toggle overlay visibility when checkbox changes
+  focusCheckbox.addEventListener('change', (e) => {
+    if (e.target.checked) {
+      overlay.style.display = 'block';
+    } else {
+      overlay.style.display = 'none';
+    }
+  });
+
+  // If you want the focus to persist on page load based on checkbox state:
+  if (focusCheckbox.checked) overlay.style.display = 'block';
+
+  // Optional: if the user resizes or you change radii dynamically, update maskWedge 'd' accordingly.
+  // (Not strictly necessary for static layout, but kept here for completeness.)
+  window.addEventListener('resize', () => {
+    const newMaskRadius = Math.max(ringConfig[4].rOut, 320) + 40;
+    maskWedge.setAttribute('d', wedgePath(cx, cy, newMaskRadius, wedgeStart, wedgeEnd));
+  });
 
 })();
 </script>
