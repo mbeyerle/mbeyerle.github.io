@@ -1,4 +1,4 @@
-<!DOCTYPE html>  
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8" />
@@ -20,11 +20,12 @@
   .slice-highlight { filter: drop-shadow(0 4px 12px rgba(0,0,0,.55)); stroke:#ffffffcc; stroke-width:3; }
   .center-label { font-family: "Libre Baskerville", Georgia, serif; font-weight:700; fill:#fff; text-anchor:middle; dominant-baseline:middle; letter-spacing:2px; }
 
-  /* Focus / ring control style (top-right). moved slightly left so it doesn't overlap wheel */
+  /* Focus / ring control style (moved to the right of the wrap) */
   .focus-control {
     position: absolute;
     top: 10px;
-    right: 34px;                /* nudged left from right edge so it won't overlap wheel */
+    left: calc(100% + 12px); /* place the panel well to the right of the wrap so it never overlaps the wheel */
+    right: auto;
     background: rgba(255,255,255,0.06);
     color: #fff;
     border-radius: 8px;
@@ -69,7 +70,7 @@
   <div class="wrap">
     <h1>Interactive Tibi Color Wheel</h1>
 
-    <!-- Top-right focus and ring visibility controls -->
+    <!-- Top-right focus and ring visibility controls (now placed to the right of .wrap) -->
     <div class="focus-control" title="Show only a small sliver at the east side / toggle rings">
       <div class="focus-row">
         <label class="label" title="Show only a small sliver at the east side">
@@ -115,6 +116,10 @@
 /*
 Pie-wedge stacked wheel with focus overlay that allows dragging through the visible wedge.
 Check boxes: CHECKED = ring visible; UNCHECKED = ring turns black and is non-interactive.
+
+Key changes:
+- Wedges are now annular (have inner radius = previous ring's outer radius) so they don't overlap back to the center.
+- The control panel is positioned to the right of the wrap using left: calc(100% + 12px).
 */
 
 (function(){
@@ -129,7 +134,7 @@ Check boxes: CHECKED = ring visible; UNCHECKED = ring turns black and is non-int
     4: 19
   };
 
-  // ring radii
+  // ring radii (outer radii)
   const ringConfig = {
     1: {rOut: 64},
     2: {rOut: 170},
@@ -154,6 +159,8 @@ Check boxes: CHECKED = ring visible; UNCHECKED = ring turns black and is non-int
     g.dataset.rotation = '0';
     const pal = palettes[ring] || ["#ccc"];
     const rOut = ringConfig[ring].rOut;
+    // inner radius is previous ring's outer radius (so wedges are annular)
+    const rIn = (ring > 1) ? ringConfig[ring-1].rOut : 0;
     const segments = segmentsByRing[ring];
     for (let i=0;i<segments;i++){
       const seg = 360 / segments;
@@ -162,8 +169,8 @@ Check boxes: CHECKED = ring visible; UNCHECKED = ring turns black and is non-int
       const path = document.createElementNS('http://www.w3.org/2000/svg','path');
       path.classList.add('slice');
 
-      // path for wedge (center -> outer arc -> center)
-      path.setAttribute('d', wedgePath(cx,cy, rOut, start, end));
+      // path for annular wedge (inner radius rIn -> outer arc -> inner arc back)
+      path.setAttribute('d', wedgePath(cx,cy, rOut, start, end, rIn));
       path.setAttribute('fill', pal[i % pal.length]);
 
       // store segment index and nominal mid-angle (before any group rotation)
@@ -179,17 +186,31 @@ Check boxes: CHECKED = ring visible; UNCHECKED = ring turns black and is non-int
     }
   });
 
-  // Build wedge path: center -> outer arc -> center (closed)
-  function wedgePath(cx,cy,rOut,startDeg,endDeg){
-    const start = polarToCartesian(cx,cy,rOut,endDeg);
-    const end   = polarToCartesian(cx,cy,rOut,startDeg);
+  // Build annular wedge path: outer arc then inner arc back.
+  // If rIn === 0 this produces a pie slice (center -> outer arc -> center).
+  function wedgePath(cx,cy,rOut,startDeg,endDeg,rIn = 0){
+    // Points on outer arc
+    const outerStart = polarToCartesian(cx,cy,rOut,endDeg);
+    const outerEnd   = polarToCartesian(cx,cy,rOut,startDeg);
+
+    // Points on inner arc
+    const innerEnd = polarToCartesian(cx,cy,rIn,startDeg);
+    const innerStart = polarToCartesian(cx,cy,rIn,endDeg);
 
     let sweep = endDeg - startDeg;
     while (sweep < 0) sweep += 360;
     sweep = sweep % 360;
     const largeArc = (sweep > 180) ? 1 : 0;
 
-    return `M ${cx} ${cy} L ${start.x} ${start.y} A ${rOut} ${rOut} 0 ${largeArc} 0 ${end.x} ${end.y} Z`;
+    if (rIn === 0) {
+      // classic pie slice: move to center, draw outer arc, close to center
+      return `M ${cx} ${cy} L ${outerStart.x} ${outerStart.y} A ${rOut} ${rOut} 0 ${largeArc} 0 ${outerEnd.x} ${outerEnd.y} Z`;
+    } else {
+      // annular sector: move to outer start, arc to outer end, line to inner end,
+      // arc on inner radius back to inner start, close.
+      // inner arc sweep direction is opposite, so use sweep-flag = 1 to draw back
+      return `M ${outerStart.x} ${outerStart.y} A ${rOut} ${rOut} 0 ${largeArc} 0 ${outerEnd.x} ${outerEnd.y} L ${innerEnd.x} ${innerEnd.y} A ${rIn} ${rIn} 0 ${largeArc} 1 ${innerStart.x} ${innerStart.y} Z`;
+    }
   }
 
   function polarToCartesian(cx,cy,r,deg){
@@ -220,7 +241,6 @@ Check boxes: CHECKED = ring visible; UNCHECKED = ring turns black and is non-int
     if (!g) return;
     const ringNum = parseInt(g.dataset.ring,10);
     if (locks[ringNum]) return;
-    // If the ring is marked "off" (i.e. invisible), its paths have pointer-events:none and won't reach here.
     svg.setPointerCapture && svg.setPointerCapture(evt.pointerId);
     active = { ringEl: g, startAngle: getPointerAngle(evt), startRotation: parseFloat(g.dataset.rotation) || 0, pointerId: evt.pointerId };
     evt.preventDefault();
@@ -252,18 +272,15 @@ Check boxes: CHECKED = ring visible; UNCHECKED = ring turns black and is non-int
     const ring = parseInt(clickedPath.dataset.ring,10);
     const g = document.getElementById('ring' + ring);
 
-    // If ring is off, ignore click (shouldn't happen because pointer-events:none will block it)
     if (g.classList.contains('ring-off')) return;
 
     const groupRot = parseFloat(g.dataset.rotation) || 0;
     const localMid = parseFloat(clickedPath.dataset.mid);
-    // absolute mid angle in wheel coordinates (0-360)
     const absoluteMid = (localMid + groupRot + 360) % 360;
 
-    // create a key for toggling: rounded absolute angle
     const key = Math.round(absoluteMid * 100) / 100;
 
-    if (highlightedKey === key) { // toggle off
+    if (highlightedKey === key) {
       clearHighlights();
       highlightedKey = null;
       return;
@@ -277,7 +294,6 @@ Check boxes: CHECKED = ring visible; UNCHECKED = ring turns black and is non-int
     clearHighlights();
     for (let r=1;r<=4;r++){
       const g = document.getElementById('ring'+r);
-      // skip rings that are turned off
       if (g.classList.contains('ring-off')) continue;
       const rot = parseFloat(g.dataset.rotation) || 0;
       const n = segmentsByRing[r];
@@ -334,7 +350,7 @@ Check boxes: CHECKED = ring visible; UNCHECKED = ring turns black and is non-int
   // Build the full-rect outer subpath + the wedge subpath (wedge produced by wedgePath)
   function buildOverlayD(){
     const rectSub = `M 0 0 H 600 V 600 H 0 Z`;
-    const wedgeSub = wedgePath(cx, cy, holeRadius, wedgeStart, wedgeEnd);
+    const wedgeSub = wedgePath(cx, cy, holeRadius, wedgeStart, wedgeEnd, 0);
     return rectSub + ' ' + wedgeSub;
   }
 
