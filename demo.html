@@ -20,7 +20,7 @@
   .slice-highlight { filter: drop-shadow(0 4px 12px rgba(0,0,0,.55)); stroke:#ffffffcc; stroke-width:3; }
   .center-label { font-family: "Libre Baskerville", Georgia, serif; font-weight:700; fill:#fff; text-anchor:middle; dominant-baseline:middle; letter-spacing:2px; }
 
-  /* Focus control style (top-right) */
+  /* Focus / ring control style (top-right) */
   .focus-control {
     position: absolute;
     top: 10px;
@@ -28,32 +28,62 @@
     background: rgba(255,255,255,0.06);
     color: #fff;
     border-radius: 8px;
-    padding: 6px 10px;
+    padding: 8px;
     font-size: 14px;
     display: flex;
-    gap: 8px;
-    align-items: center;
+    gap: 10px;
+    align-items: flex-start;
     backdrop-filter: blur(4px);
     user-select: none;
     z-index: 40;
+    flex-direction: column;
+    min-width: 150px;
   }
+  .focus-row { display:flex; gap:8px; align-items:center; justify-content:space-between; }
+  .focus-row .label { display:flex; gap:8px; align-items:center; }
   .focus-control input[type="checkbox"] {
     width: 16px;
     height: 16px;
     accent-color: #fff;
     cursor: pointer;
   }
+  .ring-toggle-list {
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+    align-items:flex-end;
+  }
+  .ring-toggle-list label { font-size: 13px; color: #fff; display:flex; gap:8px; align-items:center; cursor:pointer; }
+
+  /* When a ring is turned off, force its slices to be fully black and remove pointer events */
+  .ring-off path { fill: #000 !important; stroke: none !important; pointer-events: none !important; cursor: default !important; }
+
+  /* Slight visual cue for disabled toggle (optional) */
+  .ring-toggle-list input[type="checkbox"]:checked + span { opacity: 0.9; }
+
 </style>
 </head>
 <body>
   <div class="wrap">
     <h1>Interactive Tibi Color Wheel</h1>
 
-    <!-- Top-right focus checkbox -->
-    <label class="focus-control" title="Show only a small sliver at the east side">
-      <input id="applyFocus" type="checkbox" />
-      Apply focus
-    </label>
+    <!-- Top-right focus and ring-off controls -->
+    <div class="focus-control" title="Show only a small sliver at the east side / toggle rings">
+      <div class="focus-row">
+        <label class="label" title="Show only a small sliver at the east side">
+          <input id="applyFocus" type="checkbox" />
+          <span>Apply focus</span>
+        </label>
+      </div>
+
+      <div class="ring-toggle-list" title="Turn off (black-out) individual rings">
+        <!-- Order: outer -> inner to make it clearer -->
+        <label><input type="checkbox" id="off4"><span>Ring 4 (outer)</span></label>
+        <label><input type="checkbox" id="off3"><span>Ring 3</span></label>
+        <label><input type="checkbox" id="off2"><span>Ring 2</span></label>
+        <label><input type="checkbox" id="off1"><span>Ring 1 (center ring)</span></label>
+      </div>
+    </div>
 
     <div class="canvas-wrap">
       <svg id="wheel" viewBox="0 0 600 600" width="720" height="720" aria-label="Tibi Color Wheel">
@@ -66,7 +96,6 @@
         <!-- final center cover so center is a clean disk -->
         <circle id="centerDisk" cx="300" cy="300" r="48" fill="#050505"/>
         <text class="center-label" x="300" y="300" font-size="14"></text> 
-        <!-- Currently no center label of "Tibi" -->
 
         <!-- overlay path: full-rect outer subpath + wedge subpath as a second subpath.
              fill-rule:evenodd makes the wedge a hole (transparent) so events pass through there. -->
@@ -83,6 +112,7 @@
 <script>
 /*
 Pie-wedge stacked wheel with focus overlay that allows dragging through the visible wedge.
+Added ring-off checkboxes to blackout and disable interaction for rings.
 */
 
 (function(){
@@ -188,6 +218,7 @@ Pie-wedge stacked wheel with focus overlay that allows dragging through the visi
     if (!g) return;
     const ringNum = parseInt(g.dataset.ring,10);
     if (locks[ringNum]) return;
+    // If the ring is marked "off", it has pointer-events:none on path, which prevents pointerdown.
     svg.setPointerCapture && svg.setPointerCapture(evt.pointerId);
     active = { ringEl: g, startAngle: getPointerAngle(evt), startRotation: parseFloat(g.dataset.rotation) || 0, pointerId: evt.pointerId };
     evt.preventDefault();
@@ -218,6 +249,10 @@ Pie-wedge stacked wheel with focus overlay that allows dragging through the visi
     const clickedPath = evt.currentTarget;
     const ring = parseInt(clickedPath.dataset.ring,10);
     const g = document.getElementById('ring' + ring);
+
+    // If ring is off, ignore click (shouldn't happen because pointer-events:none will block it)
+    if (g.classList.contains('ring-off')) return;
+
     const groupRot = parseFloat(g.dataset.rotation) || 0;
     const localMid = parseFloat(clickedPath.dataset.mid);
     // absolute mid angle in wheel coordinates (0-360)
@@ -240,6 +275,8 @@ Pie-wedge stacked wheel with focus overlay that allows dragging through the visi
     clearHighlights();
     for (let r=1;r<=4;r++){
       const g = document.getElementById('ring'+r);
+      // skip rings that are turned off
+      if (g.classList.contains('ring-off')) continue;
       const rot = parseFloat(g.dataset.rotation) || 0;
       const n = segmentsByRing[r];
       const localAngleForR = (absAngle - rot + 360) % 360;
@@ -314,6 +351,43 @@ Pie-wedge stacked wheel with focus overlay that allows dragging through the visi
   // update overlay path on resize (if needed)
   window.addEventListener('resize', () => {
     overlayPath.setAttribute('d', buildOverlayD());
+  });
+
+  /***** NEW: Ring-off checkbox wiring *****/
+  const offCheckboxes = {
+    1: document.getElementById('off1'),
+    2: document.getElementById('off2'),
+    3: document.getElementById('off3'),
+    4: document.getElementById('off4')
+  };
+
+  function setRingOff(ring, isOff){
+    const g = document.getElementById('ring' + ring);
+    if (!g) return;
+    if (isOff) {
+      g.classList.add('ring-off');
+      // clear highlights for that ring to avoid leftover highlight styling
+      g.querySelectorAll('.slice-highlight').forEach(el => el.classList.remove('slice-highlight'));
+    } else {
+      g.classList.remove('ring-off');
+    }
+  }
+
+  // Initialize listeners
+  Object.keys(offCheckboxes).forEach(k => {
+    const ringNum = parseInt(k, 10);
+    const cb = offCheckboxes[ringNum];
+    if (!cb) return;
+    cb.addEventListener('change', (e) => {
+      setRingOff(ringNum, e.target.checked);
+      // If currently highlighted selection intersects a ring that is now off, recompute highlights:
+      if (highlightedKey !== null) {
+        // convert highlightedKey back to number; it's an angle already — reapply
+        applyHighlightsAtAbsoluteAngle(highlightedKey);
+      }
+    });
+    // initialize from current state (in case checked in markup)
+    setRingOff(ringNum, cb.checked);
   });
 
 })();
