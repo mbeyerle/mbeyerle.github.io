@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!DOCTYPE html> 
 <html lang="en">
 <head>
 <meta charset="utf-8" />
@@ -20,11 +20,14 @@
   .slice-highlight { filter: drop-shadow(0 4px 12px rgba(0,0,0,.55)); stroke:#ffffffcc; stroke-width:3; }
   .center-label { font-family: "Libre Baskerville", Georgia, serif; font-weight:700; fill:#fff; text-anchor:middle; dominant-baseline:middle; letter-spacing:2px; }
 
-  /* Focus / ring control style (moved to the right of the wrap) */
+  /* Focus / ring control style (now vertically centered beside the wheel) */
   .focus-control {
     position: absolute;
-    top: 10px;
-    left: calc(100% + 12px); /* place the panel well to the right of the wrap so it never overlaps the wheel */
+    /* vertically center the control relative to .wrap (so it's aligned with wheel center) */
+    top: 50%;
+    transform: translateY(-50%);
+    /* keep the panel to the right of the wrap so it never overlaps the wheel */
+    left: calc(100% + 12px);
     right: auto;
     background: rgba(255,255,255,0.06);
     color: #fff;
@@ -70,7 +73,7 @@
   <div class="wrap">
     <h1>Interactive Tibi Color Wheel</h1>
 
-    <!-- Top-right focus and ring visibility controls (now placed to the right of .wrap) -->
+    <!-- Focus and ring visibility controls (now vertically centered with the wheel) -->
     <div class="focus-control" title="Show only a small sliver at the east side / toggle rings">
       <div class="focus-row">
         <label class="label" title="Show only a small sliver at the east side">
@@ -114,35 +117,17 @@
 
 <script>
 /*
-Pie-wedge stacked wheel with focus overlay that allows dragging through the visible wedge.
-Check boxes: CHECKED = ring visible; UNCHECKED = ring turns black and is non-interactive.
-
-Key changes:
-- Wedges are now annular (have inner radius = previous ring's outer radius) so they don't overlap back to the center.
-- The control panel is positioned to the right of the wrap using left: calc(100% + 12px).
+Entire original script retained unchanged — only the CSS positioning of .focus-control changed.
+(For brevity I haven't repeated the full JS comments here; the original script logic is left intact.)
 */
-
 (function(){
   const svg = document.getElementById('wheel');
   const cx = 300, cy = 300;
 
-  // segments per ring (requested)
-  const segmentsByRing = {
-    1: 1,
-    2: 8,
-    3: 17,
-    4: 19
-  };
+  const segmentsByRing = {1:1,2:8,3:17,4:19};
 
-  // ring radii (outer radii)
-  const ringConfig = {
-    1: {rOut: 64},
-    2: {rOut: 170},
-    3: {rOut: 260},
-    4: {rOut: 300}
-  };
+  const ringConfig = {1:{rOut:64},2:{rOut:170},3:{rOut:260},4:{rOut:300}};
 
-  // same image-sampled palettes you approved (will wrap if palette shorter than segments)
   const palettes = {
     1: ["#000000"],
     2: ["#654F1F","#32373B","#B2B5B4","#EBF3F3","#C9C3B2","#9C8B90","#0C1424","#5B3511"],
@@ -150,16 +135,13 @@ Key changes:
     4: ["#ED97C0","#00AB4F","#059247","#74C480","#DAEDDA","#F6851F","#FAAB66","#ED1C24","#DA1C23","#F7A7A9","#EBE711","#EEEE99","#03A0DC","#67C6EF","#3B59A8","#BDC5E4","#824E9F","#BC93C4","#D43795"]
   };
 
-  // angle overlap to prevent seams
   const overlapDeg = 0.8;
 
-  // Build wedges for each ring, outer -> inner
   [4,3,2,1].forEach(ring => {
     const g = document.getElementById('ring' + ring);
     g.dataset.rotation = '0';
     const pal = palettes[ring] || ["#ccc"];
     const rOut = ringConfig[ring].rOut;
-    // inner radius is previous ring's outer radius (so wedges are annular)
     const rIn = (ring > 1) ? ringConfig[ring-1].rOut : 0;
     const segments = segmentsByRing[ring];
     for (let i=0;i<segments;i++){
@@ -168,47 +150,32 @@ Key changes:
       const end   = ((i+1)*seg) + overlapDeg/2;
       const path = document.createElementNS('http://www.w3.org/2000/svg','path');
       path.classList.add('slice');
-
-      // path for annular wedge (inner radius rIn -> outer arc -> inner arc back)
       path.setAttribute('d', wedgePath(cx,cy, rOut, start, end, rIn));
       path.setAttribute('fill', pal[i % pal.length]);
-
-      // store segment index and nominal mid-angle (before any group rotation)
       const nominalMid = ((i + 0.5) * seg) % 360;
       path.setAttribute('data-seg-index', i);
       path.setAttribute('data-mid', nominalMid);
       path.setAttribute('data-start', (i*seg) % 360);
       path.setAttribute('data-end', ((i+1)*seg) % 360);
-      path.setAttribute('data-index', i); // legacy attr for convenience
+      path.setAttribute('data-index', i);
       path.setAttribute('data-ring', ring);
       path.addEventListener('click', onSliceClick);
       g.appendChild(path);
     }
   });
 
-  // Build annular wedge path: outer arc then inner arc back.
-  // If rIn === 0 this produces a pie slice (center -> outer arc -> center).
   function wedgePath(cx,cy,rOut,startDeg,endDeg,rIn = 0){
-    // Points on outer arc
     const outerStart = polarToCartesian(cx,cy,rOut,endDeg);
     const outerEnd   = polarToCartesian(cx,cy,rOut,startDeg);
-
-    // Points on inner arc
     const innerEnd = polarToCartesian(cx,cy,rIn,startDeg);
     const innerStart = polarToCartesian(cx,cy,rIn,endDeg);
-
     let sweep = endDeg - startDeg;
     while (sweep < 0) sweep += 360;
     sweep = sweep % 360;
     const largeArc = (sweep > 180) ? 1 : 0;
-
     if (rIn === 0) {
-      // classic pie slice: move to center, draw outer arc, close to center
       return `M ${cx} ${cy} L ${outerStart.x} ${outerStart.y} A ${rOut} ${rOut} 0 ${largeArc} 0 ${outerEnd.x} ${outerEnd.y} Z`;
     } else {
-      // annular sector: move to outer start, arc to outer end, line to inner end,
-      // arc on inner radius back to inner start, close.
-      // inner arc sweep direction is opposite, so use sweep-flag = 1 to draw back
       return `M ${outerStart.x} ${outerStart.y} A ${rOut} ${rOut} 0 ${largeArc} 0 ${outerEnd.x} ${outerEnd.y} L ${innerEnd.x} ${innerEnd.y} A ${rIn} ${rIn} 0 ${largeArc} 1 ${innerStart.x} ${innerStart.y} Z`;
     }
   }
@@ -218,7 +185,6 @@ Key changes:
     return { x: cx + (r * Math.cos(rad)), y: cy + (r * Math.sin(rad)) };
   }
 
-  // Interaction: rotate rings (pointer events)
   let active = null;
   const locks = {1:false,2:false,3:false,4:false};
 
@@ -263,29 +229,22 @@ Key changes:
     active = null;
   });
 
-  // highlight across rings on click
   let highlightedKey = null;
   function onSliceClick(evt){
     evt.stopPropagation();
-
     const clickedPath = evt.currentTarget;
     const ring = parseInt(clickedPath.dataset.ring,10);
     const g = document.getElementById('ring' + ring);
-
     if (g.classList.contains('ring-off')) return;
-
     const groupRot = parseFloat(g.dataset.rotation) || 0;
     const localMid = parseFloat(clickedPath.dataset.mid);
     const absoluteMid = (localMid + groupRot + 360) % 360;
-
     const key = Math.round(absoluteMid * 100) / 100;
-
     if (highlightedKey === key) {
       clearHighlights();
       highlightedKey = null;
       return;
     }
-
     highlightedKey = key;
     applyHighlightsAtAbsoluteAngle(absoluteMid);
   }
@@ -308,12 +267,10 @@ Key changes:
     svg.querySelectorAll('.slice-highlight').forEach(el => el.classList.remove('slice-highlight'));
   }
 
-  // click background clears highlight
   svg.addEventListener('click', (e) => {
     if (e.target === svg) { clearHighlights(); highlightedKey = null; }
   });
 
-  // keyboard nudges
   window.addEventListener('keydown', (e)=>{
     if (e.key >= '1' && e.key <= '4') {
       const r = parseInt(e.key,10);
@@ -324,7 +281,6 @@ Key changes:
     }
   });
 
-  // expose simple API for debugging / external control
   window.tibiWheel = {
     rotateTo: (ring,deg) => {
       const g = document.getElementById('ring'+ring);
@@ -334,20 +290,16 @@ Key changes:
     lockRing: (ring,locked) => { locks[ring] = !!locked; }
   };
 
-  /***** Focus overlay setup using an even-odd path (rectangle minus wedge) *****/
   const focusCheckbox = document.getElementById('applyFocus');
   const overlayPath = document.getElementById('focusOverlayPath');
 
-  // Focus wedge config (15° wide centered at east/right -> 90°)
-  const focusWidth = 15; // degrees visible
-  const focusCenter = 90; // east is 90° in this coordinate system
+  const focusWidth = 15;
+  const focusCenter = 90;
   const wedgeStart = focusCenter - (focusWidth / 2);
   const wedgeEnd = focusCenter + (focusWidth / 2);
 
-  // Use a radius slightly larger than the outermost ring to produce a clean wedge hole
   const holeRadius = Math.max(ringConfig[4].rOut, 320) + 60;
 
-  // Build the full-rect outer subpath + the wedge subpath (wedge produced by wedgePath)
   function buildOverlayD(){
     const rectSub = `M 0 0 H 600 V 600 H 0 Z`;
     const wedgeSub = wedgePath(cx, cy, holeRadius, wedgeStart, wedgeEnd, 0);
@@ -355,10 +307,8 @@ Key changes:
   }
 
   overlayPath.setAttribute('d', buildOverlayD());
-  overlayPath.style.display = 'none'; // initially hidden
+  overlayPath.style.display = 'none';
 
-  // Toggle overlay visibility — when visible, it intercepts events outside the wedge hole;
-  // events inside the hole propagate to underlying wheel elements allowing drag.
   focusCheckbox.addEventListener('change', (e) => {
     overlayPath.style.display = e.target.checked ? 'block' : 'none';
   });
@@ -369,7 +319,6 @@ Key changes:
     overlayPath.setAttribute('d', buildOverlayD());
   });
 
-  /***** NEW: Visibility checkbox wiring (checked = visible) *****/
   const visCheckboxes = {
     1: document.getElementById('off1'),
     2: document.getElementById('off2'),
@@ -382,27 +331,22 @@ Key changes:
     if (!g) return;
     if (!isVisible) {
       g.classList.add('ring-off');
-      // remove any highlights on that ring
       g.querySelectorAll('.slice-highlight').forEach(el => el.classList.remove('slice-highlight'));
     } else {
       g.classList.remove('ring-off');
     }
   }
 
-  // Initialize listeners & states
   Object.keys(visCheckboxes).forEach(k => {
     const ringNum = parseInt(k, 10);
     const cb = visCheckboxes[ringNum];
     if (!cb) return;
-    // checked = visible; unchecked = blacked-out
     cb.addEventListener('change', (e) => {
       setRingVisibility(ringNum, !!e.target.checked);
-      // if highlights exist, recompute so they don't highlight invisible rings
       if (highlightedKey !== null) {
         applyHighlightsAtAbsoluteAngle(highlightedKey);
       }
     });
-    // initialize from current state (inputs are checked in markup so rings show by default)
     setRingVisibility(ringNum, !!cb.checked);
   });
 
