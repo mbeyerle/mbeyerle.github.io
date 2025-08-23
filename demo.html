@@ -47,7 +47,7 @@
 </head>
 <body>
   <div class="wrap">
-    <h1>Tibi Color Wheel — Pie-slice stacked (no gaps)</h1>
+    <h1>Interactive Tibi Color Wheel</h1>
 
     <!-- Top-right focus checkbox -->
     <label class="focus-control" title="Show only a small sliver at the east side">
@@ -65,7 +65,8 @@
 
         <!-- final center cover so center is a clean disk -->
         <circle id="centerDisk" cx="300" cy="300" r="48" fill="#050505"/>
-        <text class="center-label" x="300" y="300" font-size="14">Tibi</text>
+        <text class="center-label" x="300" y="300" font-size="14"></text> 
+        <!-- Currently no center label of "Tibi" -->
 
         <!-- overlay path: full-rect outer subpath + wedge subpath as a second subpath.
              fill-rule:evenodd makes the wedge a hole (transparent) so events pass through there. -->
@@ -107,9 +108,9 @@ Pie-wedge stacked wheel with focus overlay that allows dragging through the visi
   // same image-sampled palettes you approved (will wrap if palette shorter than segments)
   const palettes = {
     1: ["#000000"],
-    2: ["#767b7b","#b3b5b4","#ebf4f3","#dddfd6","#c9c2b2","#9c8b90","#59535d","#0c1524","#5b3512","#604319"],
-    3: ["#e28d40","#cb5b2a","#a64f38","#6c1e14","#743d4b","#655a64","#7e6c89","#68799a","#54787a","#426d60","#7d8661","#c99c3c","#d2b59a","#b08a6a"],
-    4: ["#f6851e","#ed1d26","#dc1c24","#ece811","#ecf09b","#67c7ef","#bcc5e4","#824e9f","#d43795","#ee97c0","#059347","#dceed9","#8aa4b6","#3b5f3a","#f0c8a4","#9a6b8f","#c4d9ef","#2b2b2b","#6f6c5f"]
+    2: ["#000000","#b3b5b4","#ebf4f3","#dddfd6","#c9c2b2","#9c8b90","#59535d","#0c1524","#5b3512","#604319"],
+    3: ["#000000","#cb5b2a","#a64f38","#6c1e14","#743d4b","#655a64","#7e6c89","#68799a","#54787a","#426d60","#7d8661","#c99c3c","#d2b59a","#b08a6a"],
+    4: ["#000000","#ed1d26","#dc1c24","#ece811","#ecf09b","#67c7ef","#bcc5e4","#824e9f","#d43795","#ee97c0","#059347","#dceed9","#8aa4b6","#3b5f3a","#f0c8a4","#9a6b8f","#c4d9ef","#2b2b2b","#6f6c5f"]
   };
 
   // angle overlap to prevent seams
